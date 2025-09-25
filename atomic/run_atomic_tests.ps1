@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string[]]$Techniques = @("T1003","T1059.001"),
     [string]$LogPath = "atomic_tests_$(Get-Date -Format yyyyMMdd_HHmmss).log"
 )
@@ -7,7 +7,7 @@
 if ($env:RUN_ATOMIC -ne "1") {
     Write-Host "DRY RUN: Atomic tests will NOT execute." -ForegroundColor Yellow
     Write-Host "To run tests, set environment variable RUN_ATOMIC=1 and re-run the script." -ForegroundColor Yellow
-    Write-Host "Example (PowerShell): $env:RUN_ATOMIC = '1'; .\\atomic\\run_atomic_tests.ps1" -ForegroundColor Cyan
+    Write-Host "Example (PowerShell): `$env:RUN_ATOMIC = '1'; .\atomic\run_atomic_tests.ps1" -ForegroundColor Cyan
     exit 0
 }
 
@@ -27,7 +27,7 @@ foreach ($technique in $Techniques) {
         # Cleanup
         Invoke-AtomicTest $technique -Cleanup | Out-File -Append $LogPath
     } catch {
-        Write-Host "Error running $technique: $_" -ForegroundColor Red
+        Write-Host "Error running ${technique}: $_" -ForegroundColor Red
     }
 }
 
