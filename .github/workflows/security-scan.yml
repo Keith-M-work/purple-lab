@@ -1,0 +1,66 @@
+name: Security Scan
+on: [push, pull_request]
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for dangerous file types
+        run: |
+          echo "Checking for forbidden file types..."
+          if git ls-files | grep -E '\.pem$|\.key$|\.pfx$|\.p12$|\.jks$'; then
+            echo "? ERROR: Private key files found!"
+            git ls-files | grep -E '\.pem$|\.key$|\.pfx$|\.p12$|\.jks$'
+            exit 1
+          fi
+          echo "? No private key files found"
+      
+      - name: Check for real AWS keys
+        run: |
+          echo "Checking for AWS keys..."
+          if git grep -E "AKIA[0-9A-Z]{16}"; then
+            echo "? ERROR: Potential AWS key found!"
+            exit 1
+          fi
+          echo "? No AWS keys found"
+      
+      - name: Check for unsafe Docker bindings
+        run: |
+          echo "Checking Docker configurations..."
+          if grep -r "0\.0\.0\.0:" --include="*.yml" --include="*.yaml" --exclude-dir="backups"; then
+            echo "? ERROR: Unsafe 0.0.0.0 binding found!"
+            exit 1
+          fi
+          echo "? All Docker bindings are localhost-only"
+      
+      - name: Check for real private IPs
+        run: |
+          echo "Checking for non-documentation IPs..."
+          # Allow only documentation IPs and private ranges
+          if git grep -E "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | grep -v -E "(192\.0\.2\.|198\.51\.100\.|203\.0\.113\.|127\.0\.0\.|10\.0\.99\.|localhost|0\.0\.0\.0)"; then
+            echo "?? WARNING: Check if these IPs are intentional"
+          fi
+          echo "? IP check complete"
+      
+      - name: Run basic YARA validation
+        run: |
+          echo "Validating YARA rules syntax..."
+          sudo apt-get update && sudo apt-get install -y yara
+          for rule in detections/yara/*.yar; do
+            if [ -f "$rule" ]; then
+              yara -w "$rule" /dev/null || exit 1
+            fi
+          done
+          echo "? YARA rules are valid"
+      
+      - name: Validate Sigma rules exist
+        run: |
+          echo "Checking Sigma rules..."
+          if [ -d "detections/sigma" ]; then
+            count=$(find detections/sigma -name "*.yml" | wc -l)
+            echo "? Found $count Sigma rules"
+          else
+            echo "?? No Sigma rules directory found"
+          fi
