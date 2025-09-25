@@ -100,3 +100,16 @@ Pull requests welcome for:
 - New detection rules
 - Vulnerability research
 - Documentation improvements
+
+## Legal and Ethical Use Only
+
+**This repository is for educational and defensive security purposes only.**
+
+- Use the code and examples **only** in isolated lab environments (VMs with snapshots, isolated VLANs, or disposable hardware).
+- Do **not** run offensive techniques or tests against systems you do not own or do not have **explicit, written permission** to test.
+- Obtain written authorization before performing security testing on third-party or production systems.
+- Follow all applicable laws, regulations, and your organization’s policies.
+- If you are unsure whether a test is permitted, stop and seek legal or managerial approval.
+
+By using the content of this repository you agree to act responsibly and ethically.
+
