@@ -1,0 +1,47 @@
+title: Advanced Persistent Threat Activity Chain
+id: f6a7b8c9-0123-45ef-6789-7890123456ab
+status: production
+description: Detects APT-like persistence and lateral movement chains
+references:
+  - https://attack.mitre.org/groups/
+author: Keith M
+date: 2025/01/20
+tags:
+  - attack.persistence
+  - attack.lateral_movement
+  - attack.collection
+correlation:
+  type: complex
+  rules:
+    - wmi_persistence
+    - scheduled_task
+    - credential_theft
+    - lateral_movement
+detection:
+  wmi_persistence:
+    EventID: 5861
+    CommandLine|contains:
+      - 'EventConsumer'
+      - 'EventFilter'
+      - '__InstanceCreationEvent'
+  scheduled_task:
+    EventID: 4698
+    TaskName|contains:
+      - 'Updater'
+      - 'OneDrive'
+  credential_theft:
+    EventID: 10
+    TargetImage|endswith: '\lsass.exe'
+    CallTrace|contains: 'UNKNOWN'
+  lateral_movement:
+    EventID: 4648
+    ProcessName|endswith:
+      - '\wmic.exe'
+      - '\psexec.exe'
+  condition: |
+    (wmi_persistence or scheduled_task) and
+    credential_theft and
+    lateral_movement
+falsepositives:
+  - IT administrative activities
+level: high

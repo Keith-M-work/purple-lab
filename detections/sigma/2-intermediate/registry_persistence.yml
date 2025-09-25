@@ -1,0 +1,29 @@
+title: Registry Run Key Persistence
+id: d4e5f6a7-8901-23de-f456-5678901234de
+status: stable
+description: Detects modifications to common persistence registry keys
+references:
+  - https://attack.mitre.org/techniques/T1547/001/
+author: Keith M
+date: 2025/01/20
+tags:
+  - attack.persistence
+  - attack.t1547.001
+logsource:
+  product: windows
+  category: registry_event
+detection:
+  selection:
+    EventType: SetValue
+    TargetObject|contains:
+      - '\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
+      - '\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce'
+      - '\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run'
+  filter:
+    Details|startswith:
+      - 'C:\Program Files\'
+      - 'C:\Windows\'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate software installation
+level: medium

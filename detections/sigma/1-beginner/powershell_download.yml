@@ -1,0 +1,35 @@
+title: PowerShell Web Download Detection
+id: a1b2c3d4-5678-90ab-cdef-1234567890ab
+status: stable
+description: Detects PowerShell commands downloading content from the internet
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+author: Keith M
+date: 2025/01/20
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.command_and_control
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection:
+    Image|endswith: '\powershell.exe'
+    CommandLine|contains:
+      - 'Invoke-WebRequest'
+      - 'Invoke-RestMethod'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'wget'
+      - 'curl'
+  filter:
+    CommandLine|contains:
+      - 'WindowsUpdate'
+      - 'Microsoft.com'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate administrative scripts
+  - Software deployment tools
+  - System update scripts
+level: medium

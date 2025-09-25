@@ -1,0 +1,39 @@
+title: Ransomware Activity Pattern Detection
+id: e5f6a7b8-9012-34ef-5678-6789012345ef
+status: experimental
+description: Detects ransomware-like behavior patterns
+references:
+  - https://attack.mitre.org/techniques/T1486/
+author: Keith M
+date: 2025/01/20
+tags:
+  - attack.impact
+  - attack.t1486
+correlation:
+  type: temporal
+  timespan: 10m
+detection:
+  shadow_delete:
+    EventID: 4688
+    CommandLine|contains:
+      - 'vssadmin delete shadows'
+      - 'wmic shadowcopy delete'
+      - 'bcdedit /set {default} recoveryenabled no'
+  mass_file_rename:
+    EventID: 4663
+    ObjectType: File
+    AccessList|contains: DELETE
+  ransom_note:
+    EventID: 11
+    TargetFilename|endswith:
+      - '_readme.txt'
+      - '_RESTORE.txt'
+      - '.hta'
+  condition: |
+    (shadow_delete | count() >= 1) and
+    (mass_file_rename | count() > 50) and
+    (ransom_note | count() >= 1)
+falsepositives:
+  - Backup operations
+  - Disk cleanup utilities
+level: critical

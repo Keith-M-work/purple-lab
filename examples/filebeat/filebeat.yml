@@ -1,0 +1,19 @@
+﻿filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/auth.log
+    - /var/log/syslog
+    - /var/log/*.log
+
+processors:
+- add_host_metadata: ~
+
+output.elasticsearch:
+  # SANITIZED DOCUMENTATION HOST (replace with your Elastic host)
+  hosts: ["http://198.51.100.20:9200"]
+  username: "elastic"
+  password: "CHANGEME"
+
+setup.kibana:
+  host: "http://198.51.100.20:5601"

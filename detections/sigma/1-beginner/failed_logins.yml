@@ -1,0 +1,26 @@
+title: Multiple Failed Login Attempts
+id: b2c3d4e5-6789-01bc-def2-3456789012bc
+status: stable
+description: Detects brute force login attempts via multiple failures
+references:
+  - https://attack.mitre.org/techniques/T1110/
+author: Keith M
+date: 2025/01/20
+tags:
+  - attack.credential_access
+  - attack.t1110
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4625
+    LogonType:
+      - 3  # Network
+      - 10 # RemoteInteractive
+  timeframe: 5m
+  condition: selection | count() by IpAddress > 10
+falsepositives:
+  - Misconfigured service accounts
+  - Users with forgotten passwords
+level: medium

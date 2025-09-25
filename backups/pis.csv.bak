@@ -1,0 +1,6 @@
+﻿hostname,role,vlan_id,sanitized_ip,mac,notes
+pi-1,malware-lab,10,192.0.2.10,AA:BB:CC:DD:EE:01,isolated sandbox
+pi-2,reverse-engineering,20,192.0.2.11,AA:BB:CC:DD:EE:02,gui/vnc
+pi-3,honeypot,30,192.0.2.12,AA:BB:CC:DD:EE:03,cowrie
+pi-4,security-infra,40,192.0.2.13,AA:BB:CC:DD:EE:04,filebeat/wazuh
+pi-5,containers,50,192.0.2.14,AA:BB:CC:DD:EE:05,docker/k3s

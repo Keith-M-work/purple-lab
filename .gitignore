@@ -1,0 +1,6 @@
+
+# Local secrets/inventories
+inventory/pis.local.csv
+secrets.local
+*.pem
+
