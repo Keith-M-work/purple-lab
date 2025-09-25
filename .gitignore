@@ -1,6 +1,47 @@
-
-# Local secrets/inventories
-inventory/pis.local.csv
-secrets.local
+# Sensitive Information - NEVER COMMIT
 *.pem
+*.key
+*.pfx
+*.p12
+*.cer
+*.crt
+secrets.local
+secrets.json
+credentials.txt
+passwords.txt
 
+# Local inventory - use examples instead
+inventory/pis.local.csv
+inventory/real_*.csv
+inventory/*_prod.csv
+
+# Test outputs that may contain sensitive data
+*.log
+*.pcap
+*.dmp
+atomic_tests_*.log
+recon_results_*/
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+env/
+
+# Docker
+.env
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+~*

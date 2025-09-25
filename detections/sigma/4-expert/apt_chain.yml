@@ -10,6 +10,9 @@ tags:
   - attack.persistence
   - attack.lateral_movement
   - attack.collection
+logsource:
+  product: windows
+  service: security
 correlation:
   type: complex
   rules:

@@ -1,0 +1,78 @@
+name: Security Validation CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday
+
+jobs:
+  validate-sigma:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+      
+      - name: Validate Sigma rules
+        run: |
+          python detections/tests/validate_sigma.py
+      
+      - name: Check for secrets
+        run: |
+          # Basic secret scanning
+          if grep -r "password\s*=\s*['\"]" --include="*.yml" --include="*.yaml" .; then
+            echo "Found potential hardcoded passwords!"
+            exit 1
+          fi
+
+  validate-yara:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install YARA
+        run: |
+          pip install yara-python
+      
+      - name: Test YARA rules
+        run: |
+          python detections/tests/run_yara_tests.py
+
+  safety-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for unsafe bindings
+        run: |
+          # Check for dangerous Docker port bindings
+          if grep -r "0\.0\.0\.0:" --include="*.yml" --include="*.yaml" --include="Dockerfile" .; then
+            echo "Found unsafe 0.0.0.0 binding! Use 127.0.0.1 instead"
+            exit 1
+          fi
+      
+      - name: Verify .gitignore
+        run: |
+          # Ensure sensitive patterns are ignored
+          required_patterns=("*.pem" "*.key" "secrets.local" "*.log")
+          for pattern in "${required_patterns[@]}"; do
+            if ! grep -q "$pattern" .gitignore; then
+              echo "Missing $pattern in .gitignore!"
+              exit 1
+            fi
+          done

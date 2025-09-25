@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  flask-vuln:
+    build: ./vuln-apps/flask-sqli
+    container_name: flask-vuln-safe
+    # CRITICAL: Only bind to localhost
+    ports:
+      - "127.0.0.1:5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - SECURITY_WARNING=This is vulnerable - localhost only!
+    networks:
+      - isolated_lab
+    restart: "no"  # Never auto-restart vulnerable apps
+    labels:
+      - "security.vulnerable=true"
+      - "security.isolate=required"
+
+networks:
+  isolated_lab:
+    driver: bridge
+    internal: true  # No external network access
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
