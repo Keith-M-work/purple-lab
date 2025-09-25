@@ -1,58 +1,53 @@
 <#
 .SYNOPSIS
-    Safe Atomic Red Team Test Runner with guardrails
+    SAFE Atomic Red Team Test Runner - DRY RUN BY DEFAULT
 .DESCRIPTION
-    Runs atomic tests with safety checks and review-first approach
+    Shows test details only. Requires explicit ATOMIC_EXECUTE=true environment variable to run
 #>
 param(
     [string[]]$Techniques = @("T1059.001"),
-    [switch]$ExecuteTests = $false,
-    [switch]$Force = $false
+    [switch]$ShowDetailsOnly = $true,
+    [switch]$GetPrereqsOnly = $false
 )
 
-# Safety check
-if ($ExecuteTests -and -not $Force) {
-    Write-Host "===========================================" -ForegroundColor Red
-    Write-Host "     ATOMIC RED TEAM SAFETY CHECK" -ForegroundColor Yellow
-    Write-Host "===========================================" -ForegroundColor Red
+$canExecute = $env:ATOMIC_EXECUTE -eq "true"
+
+if (-not $ShowDetailsOnly -and -not $GetPrereqsOnly -and -not $canExecute) {
+    Write-Host "========================================" -ForegroundColor Red
+    Write-Host "    EXECUTION BLOCKED FOR SAFETY" -ForegroundColor Yellow
+    Write-Host "========================================" -ForegroundColor Red
     Write-Host ""
-    Write-Host "You are about to run DESTRUCTIVE tests!" -ForegroundColor Red
+    Write-Host "To execute tests, set:" -ForegroundColor Yellow
+    Write-Host '   $env:ATOMIC_EXECUTE = "true"' -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "Checklist:" -ForegroundColor Yellow
-    Write-Host "[ ] Running in isolated VM?" -ForegroundColor Yellow
-    Write-Host "[ ] VM snapshot taken?" -ForegroundColor Yellow
-    Write-Host "[ ] No production systems accessible?" -ForegroundColor Yellow
-    Write-Host "[ ] Understand the test impacts?" -ForegroundColor Yellow
-    Write-Host ""
-    
-    $confirm = Read-Host "Type 'EXECUTE TESTS' to proceed (or press Enter to abort)"
-    if ($confirm -ne "EXECUTE TESTS") {
-        Write-Host "Aborted. Use -Force to bypass this check (AT YOUR OWN RISK)" -ForegroundColor Green
-        exit 0
-    }
+    Write-Host "Defaulting to safe mode..." -ForegroundColor Green
+    $ShowDetailsOnly = $true
 }
 
-Import-Module invoke-atomicredteam -Force -ErrorAction Stop
+try {
+    Import-Module invoke-atomicredteam -Force -ErrorAction Stop
+} catch {
+    Write-Host "Invoke-AtomicRedTeam not installed" -ForegroundColor Yellow
+    exit 1
+}
 
 foreach ($technique in $Techniques) {
     Write-Host "`n[*] Technique: $technique" -ForegroundColor Cyan
     
-    # Always show details first
-    Write-Host "[*] Test Details:" -ForegroundColor Green
-    Invoke-AtomicTest $technique -ShowDetails
-    
-    if ($ExecuteTests) {
-        Write-Host "[*] Getting prerequisites..." -ForegroundColor Yellow
+    if ($ShowDetailsOnly) {
+        Write-Host "[SAFE MODE] Showing details only:" -ForegroundColor Green
+        Invoke-AtomicTest $technique -ShowDetails
+    }
+    elseif ($GetPrereqsOnly) {
+        Write-Host "[SAFE MODE] Getting prerequisites:" -ForegroundColor Green
         Invoke-AtomicTest $technique -GetPrereqs
-        
-        Write-Host "[*] EXECUTING TEST..." -ForegroundColor Red
+    }
+    else {
+        Write-Host "[DANGEROUS] Executing test:" -ForegroundColor Red
         Invoke-AtomicTest $technique
-        
-        Write-Host "[*] Cleaning up..." -ForegroundColor Green
-        Invoke-AtomicTest $technique -Cleanup
-    } else {
-        Write-Host "[*] Review mode only. Use -ExecuteTests to run" -ForegroundColor Green
     }
 }
 
-Write-Host "`n[+] Complete. Always review logs for IOCs!" -ForegroundColor Green
+if ($ShowDetailsOnly -or $GetPrereqsOnly) {
+    Write-Host "`n[SAFE] No destructive actions taken" -ForegroundColor Green
+}
