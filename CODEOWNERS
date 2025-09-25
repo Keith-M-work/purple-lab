@@ -1,0 +1,14 @@
+# CODEOWNERS - Require review for critical paths
+# Replace with your actual GitHub username
+
+# Detection rules require review
+/detections/ @Keith-M-work
+
+# Vulnerable apps require careful review
+/vuln-apps/ @Keith-M-work
+
+# CI/CD changes need review
+/.github/ @Keith-M-work
+
+# Security documentation
+SECURITY.md @Keith-M-work

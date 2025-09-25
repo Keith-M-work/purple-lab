@@ -45,3 +45,28 @@ docker-compose.override.yml
 *.bak
 *.backup
 ~*
+
+# Security - NEVER commit these
+*.pem
+*.key
+*.pfx
+*.p12
+*.cer
+*.crt
+*.jks
+*.keystore
+.env
+.env.*
+secrets.local
+credentials.json
+
+# Local inventory files
+inventory/*.local.csv
+inventory/real_*.csv
+inventory/*_prod.csv
+
+# Test outputs that might leak info
+*.log
+*.pcap
+*.dmp
+atomic_tests_*.log
