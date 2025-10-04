@@ -1,0 +1,1 @@
+﻿## Power requirements (example)
