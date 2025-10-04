@@ -1,4 +1,4 @@
-name: Security Scan
+﻿name: Security Scan
 on: [push, pull_request]
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
         run: |
           echo "Validating YARA rules syntax..."
           sudo apt-get update && sudo apt-get install -y yara
-          for rule in detections/yara/*.yar; do
+          for rule in sec-ops/detections/yara/*.yar; do
             if [ -f "$rule" ]; then
               yara -w "$rule" /dev/null || exit 1
             fi
@@ -59,7 +59,7 @@ jobs:
         run: |
           echo "Checking Sigma rules..."
           if [ -d "detections/sigma" ]; then
-            count=$(find detections/sigma -name "*.yml" | wc -l)
+            count=$(find sec-ops/detections/sigma -name "*.yml" | wc -l)
             echo "? Found $count Sigma rules"
           else
             echo "?? No Sigma rules directory found"
