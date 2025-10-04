@@ -1,0 +1,24 @@
+﻿<group name="c2_detection">
+  <!-- Periodic callback detection -->
+  <rule id="100200" level="8">
+    <if_group>web</if_group>
+    <match>callback|beacon|heartbeat</match>
+    <description>Potential C2 callback pattern in URI</description>
+  </rule>
+
+  <!-- Suspicious user agent -->
+  <rule id="100201" level="7">
+    <if_group>web</if_group>
+    <regex>MSIE [6-8]\.0|compatible.*Windows NT 5</regex>
+    <description>Outdated user agent (possible C2)</description>
+  </rule>
+
+  <!-- Beacon interval detection -->
+  <rule id="100202" level="9">
+    <if_sid>100200</if_sid>
+    <same_source_ip />
+    <frequency>5</frequency>
+    <timeframe>300</timeframe>
+    <description>Regular C2 beacon pattern detected</description>
+  </rule>
+</group>
