@@ -1,4 +1,4 @@
-name: Security Validation CI
+﻿name: Security Validation CI
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
       
       - name: Validate Sigma rules
         run: |
-          python detections/tests/validate_sigma.py
+          python sec-ops/detections/tests/validate_sigma.py
       
       - name: Check for secrets
         run: |
@@ -51,7 +51,7 @@ jobs:
       
       - name: Test YARA rules
         run: |
-          python detections/tests/run_yara_tests.py
+          python sec-ops/detections/tests/run_yara_tests.py
 
   safety-check:
     runs-on: ubuntu-latest
