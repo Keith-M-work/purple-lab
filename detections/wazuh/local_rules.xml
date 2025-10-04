@@ -1,0 +1,27 @@
+﻿<group name="purple_lab, web">
+  <rule id="100100" level="8">
+    <if_group>syslog</if_group>
+    <regex>(\bunion\b.*\bselect\b|('|%27)\s*or\s*1=1|--\s*$)</regex>
+    <description>Purple Lab: Possible SQLi in query</description>
+    <group>attack,sqli</group>
+  </rule>
+  <rule id="100101" level="7">
+    <if_group>syslog</if_group>
+    <regex>(\.\./|%2e%2e%2f|\.\.\\)</regex>
+    <description>Purple Lab: Directory traversal attempt</description>
+    <group>attack,lfi</group>
+  </rule>
+  <rule id="100102" level="6">
+    <if_group>syslog</if_group>
+    <regex>(sqlmap|nikto|nmap scripting engine)</regex>
+    <description>Purple Lab: Recon tool user-agent</description>
+    <group>recon,web</group>
+  </rule>
+  <rule id="100103" level="7">
+    <if_group>syslog</if_group>
+    <match>" 40| 50"</match>
+    <same_source_ip/><frequency>15</frequency><timeframe>60</timeframe>
+    <description>Purple Lab: HTTP error burst same source</description>
+    <group>anomaly,web</group>
+  </rule>
+</group>

@@ -1,0 +1,1 @@
+﻿## VLAN layout details (example)
