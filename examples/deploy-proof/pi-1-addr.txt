@@ -1,1 +1,0 @@
-﻿placeholder: pi-1 ip/hostname output
