@@ -1,6 +1,0 @@
-# inventory/example_inventory.csv
-# Example using documentation-safe IPs (RFC 5737)
-hostname,role,vlan,ip,mac,notes
-pi-demo-1,honeypot,99,192.0.2.10,02:00:5E:10:00:00,Example only
-pi-demo-2,monitoring,99,192.0.2.11,02:00:5E:10:00:01,Example only
-pi-demo-3,elastic,99,192.0.2.12,02:00:5E:10:00:02,Example only
