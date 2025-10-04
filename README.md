@@ -1,16 +1,10 @@
-﻿# Purple Lab  Home SOC & Cyber Range
+﻿# Purple Lab  grouped layout
 
-## Series
-- Part 1  `part1-foundation/`
-- Part 2  `part2-wazuh-vlans/`
-- Part 3  `part3-detections/`
+- **Medium Series Content**  `part1-foundation`, `part2-wazuh-vlans`, `part3-detections`
+- **Security Operations**    detections, offensive, blue-team
+- **Lab Applications**       vulnerable apps & demos
+- **Core Infrastructure**    config & scripts
+- **Training & Exercises**   scenarios & drills
+- **Documentation**          policies and the full README
 
-## Key Areas
-- Detections  `detections/`
-- Juice Shop  `vuln-apps/juice-shop/`
-- Exercises  `exercises/`
-- IR & Playbooks  `blue-team/` and `offensive/`
-
-## Safety
-Docs use RFC-5737 example IPs.
-Real values go in `config/lab.json` (ignored). Example: `config/lab.sample.json`.
+> Full project README lives at: `Documentation/README.md`
