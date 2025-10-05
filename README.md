@@ -41,10 +41,10 @@ Each VLAN needs pfSense rules to Wazuh:
 - TCP 443 (dashboard)
 
 ## Repository Structure
-- `scripts/powershell/` - Automation scripts
-- `detections/` - Wazuh and Sigma rules
-- `offensive/` - Attack simulations
-- `docs/` - Detailed documentation
+- `project-docs/` â€” Troubleshooting, PoCs
+- `part3-detections/` â€” Detection content
+- `sec-ops/` â€” Blue team / operations
+- `lab-apps/`, `core-infra/`, `infra/`, `demos/`, `training-exercises/`, `medium-series/`
 
 ## Safety
 - Never expose to internet
