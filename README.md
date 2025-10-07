@@ -66,18 +66,18 @@ Test-NetConnection 10.10.10.50 -Port 1515   # Agent enrollment
                 │ TRUNK (VLANs 10,20,30-34)
                 │
 ┌───────────────┴──────────────────────────────────┐
-│  Managed PoE Switch (8-port + 2 SFP)            │
+│  Managed PoE Switch (8-port + 2 SFP)             │
 │  Switch Management IP: 10.10.10.2                │
 │  [Port 1]  Empty                                 │
-│  [Port 2]  Management Workstation (VLAN 10)     │
-│  [Port 3]  Gandalf Pi (VLAN 30) → 10.30.30.10   │
-│  [Port 4]  Saruman Pi (VLAN 31) → 10.31.31.10   │
-│  [Port 5]  Aragorn Pi (VLAN 32) → 10.32.32.10   │
-│  [Port 6]  Legolas Pi (VLAN 33) → 10.33.33.10   │
-│  [Port 7]  Gollum Pi (VLAN 34) → 10.34.34.10    │
-│  [Port 8]  Legacy Router (logging/isolated)     │
-│  [SFP 1]   Hypervisor Host (TRUNK) → 10.10.10.20│
-│  [SFP 2]   Firewall Trunk                       │
+│  [Port 2]  Management Workstation (VLAN 10)      │
+│  [Port 3]  Gandalf Pi (VLAN 30) → 10.30.30.10    │
+│  [Port 4]  Saruman Pi (VLAN 31) → 10.31.31.10    │
+│  [Port 5]  Aragorn Pi (VLAN 32) → 10.32.32.10    │
+│  [Port 6]  Legolas Pi (VLAN 33) → 10.33.33.10    │
+│  [Port 7]  Gollum Pi (VLAN 34) → 10.34.34.10     │
+│  [Port 8]  Legacy Router (logging/isolated)      │
+│  [SFP 1]   Hypervisor Host (TRUNK) → 10.10.10.20 │
+│  [SFP 2]   Firewall Trunk                        │
 └──────────────────────────────────────────────────┘
 ```
 
