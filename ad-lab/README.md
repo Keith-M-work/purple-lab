@@ -2,6 +2,8 @@
 
 ![AD Lab Topology](assets/ad-lab-topology.png)
 
+![AD Lab Topology](assets/ad-lab-topology.png)
+
 A self-contained purple team environment for practicing adversary emulation, detection engineering, and attack path analysis against a realistic Active Directory domain.
 
 ## Lab Architecture
@@ -140,4 +142,5 @@ Custom Wazuh rules in `wazuh-rules/` detect:
 - Windows Defender is disabled on the target for lab purposes only
 - Do not expose any lab VM to production networks
 - All credentials in this repo are for lab use only
+
 
