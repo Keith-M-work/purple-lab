@@ -143,3 +143,7 @@ Custom Wazuh rules in `wazuh-rules/` detect:
 
 
 
+
+---
+
+> **Notice:** This repository is public for portfolio purposes. All content is read-only. Unauthorized reproduction or redistribution is not permitted.
