@@ -22,13 +22,12 @@ detection:
   selection:
     TargetImage|endswith: '\lsass.exe'
     GrantedAccess:
-      # PROCESS_VM_READ | PROCESS_QUERY_(LIMITED_)INFORMATION combinations used by
-      # Mimikatz, procdump, nanodump, handlekatz, pypykatz, comsvcs MiniDump.
+      # Canonical LSASS-dump mask set, identical across the Splunk / Elastic /
+      # CrowdStrike siblings for this technique. VM_READ | QUERY_(LIMITED_)INFO
+      # combinations used by Mimikatz, procdump, nanodump, handlekatz, pypykatz,
+      # comsvcs MiniDump.
       - '0x1010'   # QUERY_LIMITED_INFORMATION | VM_READ  (nanodump, handlekatz)
-      - '0x1038'
-      - '0x1400'
       - '0x1410'   # classic Mimikatz sekurlsa::logonpasswords
-      - '0x1418'
       - '0x1438'   # procdump / MiniDumpWriteDump
       - '0x143a'   # procdump -ma
       - '0x147a'

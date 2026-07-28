@@ -1,6 +1,6 @@
 /* =============================================================================
    Splunk — Session Token Reuse From Multiple Browsers / Locations (T1550.004)
-   Tactic: Defense Evasion (TA0005) | Credential Access (TA0006)
+   Tactic: Defense Evasion (TA0005) | Lateral Movement (TA0008) | Credential Access (TA0006, via T1539)
    Author: Keith M | Version: 1.1 | 2026-07-24 (updated 2026-07-28) | Language: SPL
    Spec: ../specs/T1550.004_session_token_reuse.md
 
@@ -157,6 +157,9 @@ index=okta sourcetype="OktaIM2:log" authenticationContext.externalSessionId=*
    attacker (E7). Cookie is HMAC-hashed at the proxy — never index raw (spec §3.2).
    ============================================================================= */
 index=weblogs sourcetype=nginx:access session_key=*
+/* normalise_browser reads a field named `ua`; the nginx sourcetype does not
+   emit one, so set it here or browser detection silently collapses to JA4-only */
+| eval ua=coalesce(http_user_agent, user_agent, useragent, "")
 | `normalise_browser`
 | iplocation src_ip
 | stats min(_time) as firstTime, max(_time) as lastTime,

@@ -13,6 +13,7 @@ date: 2026/07/24
 modified: 2026/07/28
 tags:
   - attack.defense_evasion
+  - attack.lateral_movement
   - attack.credential_access
   - attack.t1550.004
   - attack.t1539

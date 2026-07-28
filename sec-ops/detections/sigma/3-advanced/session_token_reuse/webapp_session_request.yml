@@ -14,12 +14,15 @@ date: 2026/07/24
 modified: 2026/07/28
 tags:
   - attack.defense_evasion
+  - attack.lateral_movement
   - attack.t1550.004
 logsource:
   category: webserver
 detection:
   selection:
-    cs-status|lt: 400
+    # sc-status is the server->client HTTP status in the Sigma webserver schema
+    # (cs-* fields are client->server; there is no cs-status).
+    sc-status|lt: 400
   filter_no_session:
     session_key: null
   condition: selection and not filter_no_session
