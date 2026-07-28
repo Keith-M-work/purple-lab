@@ -1,0 +1,56 @@
+title: Entra ID Interactive Sign-In With Session ID
+id: 3a7c9e21-4b58-4d06-9f13-6e2a8c4d0b75
+name: entra_signin_with_session
+status: experimental
+description: |
+  Base event - successful Entra ID sign-in carrying a session id, scoped to
+  browser-based sign-ins. Not an alert on its own; consumed by the correlations
+  in this folder. See README.md for the enrichment and normalisation
+  requirements that must be satisfied upstream of these rules.
+references:
+  - https://attack.mitre.org/techniques/T1550/004/
+author: Keith M
+date: 2026/07/24
+modified: 2026/07/28
+tags:
+  - attack.defense_evasion
+  - attack.t1550.004
+logsource:
+  product: azure
+  service: signinlogs
+detection:
+  selection:
+    # NOTE: in the Sentinel SigninLogs table ResultType is a STRING ("0").
+    # If you ingest via Log Analytics, change this to '0'. Integer 0 matches
+    # Graph/EventHub exports. Confirm the type in your pipeline.
+    ResultType: 0
+  filter_no_session:
+    SessionId: null
+  # Exclude non-browser client apps. These values live in clientAppUsed, NOT in
+  # DeviceDetail.browser (which holds "Chrome 126.0.0"). Filtering them on the
+  # browser field - as an earlier draft did - never matches and excludes nothing.
+  filter_non_browser_client:
+    clientAppUsed:
+      - 'Mobile Apps and Desktop clients'
+      - 'Exchange ActiveSync'
+      - 'IMAP4'
+      - 'POP3'
+      - 'MAPI'
+      - 'SMTP'
+      - 'Other clients'
+  # Drop sign-ins with no browser value so they cannot inflate the distinct
+  # browser count in the correlation.
+  filter_no_browser:
+    DeviceDetail.browser: null
+  condition: selection and not 1 of filter_*
+fields:
+  - UserPrincipalName
+  - SessionId
+  - IPAddress
+  - DeviceDetail.browser
+  - clientAppUsed
+  - AutonomousSystemNumber
+  - LocationDetails.countryOrRegion
+falsepositives:
+  - Base rule - not intended to alert
+level: informational

@@ -1,0 +1,35 @@
+title: Web Application Session Request
+id: 9a3c5e87-1b14-4d62-f579-2e8a4c0d6b31
+name: webapp_session_request
+status: experimental
+description: |
+  Base event - authenticated request to a lab web application carrying a session
+  key. Not an alert on its own; consumed by the correlations in this folder.
+
+  The session cookie MUST be HMAC-hashed at the reverse proxy before indexing
+  (spec section 3.2) - session tokens are credentials, and indexing them raw
+  turns the SIEM into a credential store. See README.md.
+references:
+  - https://attack.mitre.org/techniques/T1550/004/
+author: Keith M
+date: 2026/07/24
+modified: 2026/07/28
+tags:
+  - attack.defense_evasion
+  - attack.t1550.004
+logsource:
+  category: webserver
+detection:
+  selection:
+    cs-status|lt: 400
+  filter_no_session:
+    session_key: null
+  condition: selection and not filter_no_session
+fields:
+  - session_key
+  - c-ip
+  - cs-user-agent
+  - cs-uri-stem
+  - cs-referer
+  - tls.client.ja4
+level: informational

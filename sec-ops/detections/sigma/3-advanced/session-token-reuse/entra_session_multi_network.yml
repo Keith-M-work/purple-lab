@@ -1,0 +1,44 @@
+title: Session Token Used From Multiple Networks (Entra ID)
+id: 5c9e1a43-6d70-4f28-b135-8a4c0e6f2d97
+status: experimental
+description: |
+  One Entra ID session id presented from two or more autonomous systems within
+  an hour. Weaker than the browser variant on its own - VPNs, mobile carriers
+  and iCloud Private Relay all move a user between ASNs legitimately, which is
+  why this rule is deliberately rated low (signal-to-noise: it is a supporting
+  signal, not a standalone alert).
+
+  REQUIRES ASN enrichment upstream: Entra sign-in logs do not natively carry an
+  autonomous system number. The ingest pipeline must map IPAddress -> ASN and
+  stamp AutonomousSystemNumber onto the event, or this correlation counts a
+  field that is not present and never fires. See README.md.
+
+  Intersect this with the browser variant on SessionId. Either alone is noise;
+  together they are the alert (spec R3 + R4). Sigma cannot express that
+  intersection - do it at the backend, or use the native SPL/ES|QL/CQL rules.
+references:
+  - https://attack.mitre.org/techniques/T1550/004/
+  - https://attack.mitre.org/techniques/T1539/
+author: Keith M
+date: 2026/07/24
+modified: 2026/07/28
+tags:
+  - attack.defense_evasion
+  - attack.credential_access
+  - attack.t1550.004
+  - attack.t1539
+correlation:
+  type: value_count
+  rules:
+    - entra_signin_with_session
+  group-by:
+    - SessionId
+  timespan: 1h
+  condition:
+    gte: 2
+    field: AutonomousSystemNumber
+falsepositives:
+  - Corporate VPN split-tunnel and multi-site NAT egress
+  - Mobile carrier IP rotation
+  - Apple iCloud Private Relay
+level: low

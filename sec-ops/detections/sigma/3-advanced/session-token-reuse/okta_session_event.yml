@@ -1,0 +1,38 @@
+title: Okta Session Event
+id: 6d0f2b54-7e81-4a39-c246-9b5d1f7a3e08
+name: okta_session_event
+status: experimental
+description: |
+  Base event - Okta system log entry carrying an external session id. Not an
+  alert on its own; consumed by the correlations in this folder. Okta populates
+  client.userAgent.browser at family granularity (CHROME, SAFARI, FIREFOX), so
+  browser-family normalisation is NOT required here - unlike the Entra and web
+  variants. See README.md.
+references:
+  - https://attack.mitre.org/techniques/T1550/004/
+author: Keith M
+date: 2026/07/24
+modified: 2026/07/28
+tags:
+  - attack.defense_evasion
+  - attack.t1550.004
+logsource:
+  product: okta
+  service: okta
+detection:
+  selection:
+    outcome.result: 'SUCCESS'
+  filter_no_session:
+    authenticationContext.externalSessionId: null
+  filter_service:
+    client.userAgent.browser:
+      - 'UNKNOWN'
+      - null
+  condition: selection and not 1 of filter_*
+fields:
+  - actor.alternateId
+  - authenticationContext.externalSessionId
+  - client.ipAddress
+  - client.userAgent.browser
+  - debugContext.debugData.dtHash
+level: informational

@@ -1,0 +1,36 @@
+title: Okta Device Token Changed Mid-Session
+id: 8f2b4d76-0a03-4c51-e468-1d7f3b9c5a20
+status: experimental
+description: |
+  One Okta external session id associated with two or more distinct dtHash
+  device tokens within an hour. dtHash identifies the device; it should be stable
+  for the life of a session. A change while the session id holds constant is one
+  of the cleanest session-hijack signals available in any product, and does not
+  depend on browser or geo heuristics at all.
+
+  Respond by revoking the Okta session, not by resetting the password - the
+  presented token is already authenticated.
+references:
+  - https://attack.mitre.org/techniques/T1550/004/
+  - https://attack.mitre.org/techniques/T1539/
+author: Keith M
+date: 2026/07/24
+modified: 2026/07/28
+tags:
+  - attack.defense_evasion
+  - attack.credential_access
+  - attack.t1550.004
+  - attack.t1539
+correlation:
+  type: value_count
+  rules:
+    - okta_session_event
+  group-by:
+    - authenticationContext.externalSessionId
+  timespan: 1h
+  condition:
+    gte: 2
+    field: debugContext.debugData.dtHash
+falsepositives:
+  - Rare. Investigate every hit.
+level: critical

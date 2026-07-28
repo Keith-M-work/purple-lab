@@ -1,0 +1,52 @@
+title: Web Session Key Presented By A Non-Browser Client
+id: 2d6f8b10-4e47-4095-c8ac-5b1d7f3a9e64
+status: experimental
+description: |
+  A session key presented by curl, python-requests, wget or a similar scripting
+  client. This is the crude end of token theft - the attacker lifted the cookie
+  into a tool without bothering to impersonate a browser.
+
+  This is a single-event rule: it fires on any request that carries a session
+  key AND a tool User-Agent. It does not, and with a single event cannot, prove
+  the key previously belonged to a browser session - a benign API client that
+  reuses a browser cookie will also match (see false positives). Non-browser and
+  missing User-Agent values are a standard proxy-log investigation signal;
+  treat a hit as a lead to confirm against the session's browser history.
+references:
+  - https://attack.mitre.org/techniques/T1550/004/
+  - https://attack.mitre.org/techniques/T1539/
+author: Keith M
+date: 2026/07/24
+modified: 2026/07/28
+tags:
+  - attack.defense_evasion
+  - attack.credential_access
+  - attack.t1550.004
+  - attack.t1539
+logsource:
+  category: webserver
+detection:
+  selection:
+    session_key|exists: true
+  selection_tool_ua:
+    cs-user-agent|contains:
+      - 'curl/'
+      - 'Wget/'
+      - 'python-requests'
+      - 'python-urllib'
+      - 'Go-http-client'
+      - 'okhttp'
+      - 'PostmanRuntime'
+      - 'axios/'
+      - 'libwww-perl'
+  condition: all of selection*
+fields:
+  - session_key
+  - c-ip
+  - cs-user-agent
+  - cs-uri-stem
+falsepositives:
+  - Legitimate API clients that reuse a browser session cookie rather than a
+    dedicated API token - if this fires constantly for one application, that is
+    an application design problem worth reporting
+level: high

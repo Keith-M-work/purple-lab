@@ -1,0 +1,45 @@
+title: Web Session Key Used From Multiple TLS Fingerprints
+id: 0b4d6f98-2c25-4e73-a68a-3f9b5d1e7c42
+status: experimental
+description: |
+  One web session key presented with two or more distinct JA3/JA4 TLS
+  fingerprints within an hour.
+
+  JA4 fingerprints the TLS ClientHello - a property of the attacker's actual TLS
+  stack, not a client-supplied string. A competent attacker replaying a stolen
+  cookie copies the victim's User-Agent verbatim, which defeats browser-based
+  detection entirely but leaves the TLS fingerprint unchanged and mismatched.
+  This is not a corner case: SOC investigation practice treats the User-Agent as
+  attacker-controlled precisely because malware routinely presents a legitimate,
+  normal-looking UA to evade inspection.
+
+  This rule therefore catches the case the browser rules miss, and a hit where
+  the User-Agent is IDENTICAL is stronger evidence, not weaker - it implies
+  deliberate spoofing (spec E7).
+references:
+  - https://attack.mitre.org/techniques/T1550/004/
+  - https://attack.mitre.org/techniques/T1539/
+  - https://github.com/FoxIO-LLC/ja4
+author: Keith M
+date: 2026/07/24
+modified: 2026/07/28
+tags:
+  - attack.defense_evasion
+  - attack.credential_access
+  - attack.t1550.004
+  - attack.t1539
+correlation:
+  type: value_count
+  rules:
+    - webapp_session_request
+  group-by:
+    - session_key
+  timespan: 1h
+  condition:
+    gte: 2
+    field: tls.client.ja4
+falsepositives:
+  - TLS library upgrade mid-session (rare within a 1h window)
+  - A client legitimately switching networks in a way that changes TLS
+    negotiation - uncommon, JA4 is generally stable per client build
+level: high
