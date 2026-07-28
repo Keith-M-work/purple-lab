@@ -1,0 +1,23 @@
+title: Mass File Deletion Threshold Exceeded
+id: 0d5b8f14-6c27-4e39-b04a-2b3f5d7e9a6b
+status: experimental
+description: More than 50 audited file DELETE/WRITE events from one host in 5
+  minutes. Use standalone, or as a higher-fidelity substitute for the
+  ransomware_mass_file_access stage above once tuned to your baseline.
+author: Keith M
+date: 2026/07/24
+tags:
+  - attack.impact
+  - attack.t1486
+correlation:
+  type: event_count
+  rules:
+    - ransomware_mass_file_access
+  group-by:
+    - Computer
+  timespan: 5m
+  condition:
+    gt: 50
+falsepositives:
+  - Backup and sync agents - baseline before enabling
+level: high

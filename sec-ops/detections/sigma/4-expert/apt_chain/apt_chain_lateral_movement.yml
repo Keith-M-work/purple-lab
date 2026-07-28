@@ -1,0 +1,29 @@
+title: Explicit Credential Use By Remote Execution Tooling
+id: 4f7c1d63-2e95-4048-b1aa-5d9c3f608124
+name: apt_chain_lateral_movement
+status: test
+description: Logon with explicit credentials (4648) initiated by wmic/psexec-style
+  remote execution tooling.
+references:
+  - https://attack.mitre.org/techniques/T1021/
+author: Keith M
+date: 2026/07/24
+tags:
+  - attack.lateral_movement
+  - attack.t1021.002
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4648
+    ProcessName|endswith:
+      - '\wmic.exe'
+      - '\psexec.exe'
+      - '\psexesvc.exe'
+      - '\paexec.exe'
+      - '\winrs.exe'
+  condition: selection
+falsepositives:
+  - Administrators using PsExec or wmic for legitimate remote administration
+level: medium

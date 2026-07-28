@@ -2,12 +2,10 @@ title: Okta Session Event
 id: 6d0f2b54-7e81-4a39-c246-9b5d1f7a3e08
 name: okta_session_event
 status: experimental
-description: |
-  Base event - Okta system log entry carrying an external session id. Not an
-  alert on its own; consumed by the correlations in this folder. Okta populates
-  client.userAgent.browser at family granularity (CHROME, SAFARI, FIREFOX), so
-  browser-family normalisation is NOT required here - unlike the Entra and web
-  variants. See README.md.
+description: Base event - Okta system log entry carrying an external session id.
+  Okta populates client.userAgent.browser at family granularity (CHROME,
+  SAFARI), so browser-family normalisation is NOT required for the Okta variant
+  - unlike Entra and web.
 references:
   - https://attack.mitre.org/techniques/T1550/004/
 author: Keith M

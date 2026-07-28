@@ -4,18 +4,15 @@ status: experimental
 description: |
   One Entra ID session id presented from two or more autonomous systems within
   an hour. Weaker than the browser variant on its own - VPNs, mobile carriers
-  and iCloud Private Relay all move a user between ASNs legitimately, which is
-  why this rule is deliberately rated low (signal-to-noise: it is a supporting
-  signal, not a standalone alert).
+  and iCloud Private Relay all move a user between ASNs legitimately.
 
-  REQUIRES ASN enrichment upstream: Entra sign-in logs do not natively carry an
+  REQUIRES ASN enrichment upstream: Entra sign-in logs carry no native
   autonomous system number. The ingest pipeline must map IPAddress -> ASN and
   stamp AutonomousSystemNumber onto the event, or this correlation counts a
-  field that is not present and never fires. See README.md.
+  field that is not present and never fires.
 
   Intersect this with the browser variant on SessionId. Either alone is noise;
-  together they are the alert (spec R3 + R4). Sigma cannot express that
-  intersection - do it at the backend, or use the native SPL/ES|QL/CQL rules.
+  together they are the alert (spec R3 + R4).
 references:
   - https://attack.mitre.org/techniques/T1550/004/
   - https://attack.mitre.org/techniques/T1539/

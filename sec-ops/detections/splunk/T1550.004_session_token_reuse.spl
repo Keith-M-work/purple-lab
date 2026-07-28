@@ -1,0 +1,260 @@
+/* =============================================================================
+   Splunk — Session Token Reuse From Multiple Browsers / Locations (T1550.004)
+   Tactic: Defense Evasion (TA0005) | Credential Access (TA0006)
+   Author: Keith M | Version: 1.1 | 2026-07-24 (updated 2026-07-28) | Language: SPL
+   Spec: ../specs/T1550.004_session_token_reuse.md
+
+   ALERT CONDITIONS (all required — see spec §2.1)
+     R1 same session id   R2 same user            R3 >=2 browser FAMILIES
+     R4 >=2 ASNs          R5 within 60m window    R6 no suppression match
+
+   The browser-family difference (R3) is the detection. A session cookie cannot
+   move between browsers. Geography only escalates — see spec §1.
+
+   Four data-source versions below. Deploy the one matching your telemetry.
+   ============================================================================= */
+
+
+/* -----------------------------------------------------------------------------
+   MACRO — browser family normalisation (spec §3.1)
+   Put in macros.conf as `normalise_browser`. Without this you will alert on
+   every Chrome auto-update (suppression S4) and the rule will be unusable.
+   ----------------------------------------------------------------------------- */
+/*
+[normalise_browser]
+definition = eval browser_family=lower(case(\
+    match(ua,"(?i)edg/"),            "edge",\
+    match(ua,"(?i)opr/|opera"),      "opera",\
+    match(ua,"(?i)chrome/"),         "chrome",\
+    match(ua,"(?i)firefox/"),        "firefox",\
+    match(ua,"(?i)version/.*safari"),"safari",\
+    match(ua,"(?i)curl|wget|python|go-http|okhttp|postman"), "tool",\
+    true(),                          "other")),\
+  os_family=lower(case(\
+    match(ua,"(?i)windows nt"), "windows",\
+    match(ua,"(?i)mac os x"),   "macos",\
+    match(ua,"(?i)android"),    "android",\
+    match(ua,"(?i)iphone|ipad"),"ios",\
+    match(ua,"(?i)linux|x11"),  "linux",\
+    true(),                     "other")),\
+  browser_fp=browser_family.":".os_family
+iseval = 0
+*/
+
+
+/* =============================================================================
+   VERSION 1 — ENTRA ID / AZURE AD  (SigninLogs)
+   ============================================================================= */
+index=azure sourcetype="mscs:azure:eventhub" category=SignInLogs
+    properties.sessionId=*
+| rename properties.* as *
+/* Scope to browser sign-ins. "Mobile Apps and Desktop clients", "Exchange
+   ActiveSync" etc. are clientAppUsed values, NOT deviceDetail.browser values
+   (spec §4.1) — filtering them on the browser field excludes nothing. */
+| search clientAppUsed="Browser"
+| eval ua=coalesce('deviceDetail.browser',"")
+/* Entra gives "Chrome 126.0.0" — family is everything before the first space */
+| eval browser_family=lower(mvindex(split(ua," "),0)),
+       os_family=lower('deviceDetail.operatingSystem'),
+       browser_fp=browser_family.":".os_family
+| eval lat='location.geoCoordinates.latitude',
+       lon='location.geoCoordinates.longitude',
+       country='location.countryOrRegion',
+       asn=autonomousSystemNumber,
+       user=userPrincipalName,
+       session_id=sessionId
+/* --- R6 / suppression: drop known-benign egress before aggregating --- */
+| search NOT [ | inputlookup corporate_egress_ranges | fields ipAddress ]        /* S1 */
+| search NOT [ | inputlookup mobile_carrier_asns     | fields asn ]              /* S2 */
+| search NOT [ | inputlookup icloud_private_relay    | fields ipAddress ]        /* S3 */
+| search NOT [ | inputlookup service_user_agents     | fields browser_family ]   /* S5 */
+/* --- aggregate per session --- */
+| stats min(_time) as firstTime, max(_time) as lastTime,
+        dc(browser_fp) as n_browsers, dc(asn) as n_asns, dc(country) as n_countries,
+        values(browser_fp) as browsers, values(ipAddress) as ips,
+        values(country) as countries, values(deviceDetail.deviceId) as devices,
+        earliest(lat) as lat1, earliest(lon) as lon1,
+        latest(lat)   as lat2, latest(lon)   as lon2,
+        values(authenticationRequirement) as authReq, count as events
+    by session_id, user
+/* --- R3 + R4 + R5: the alert condition --- */
+| where n_browsers >= 2 AND n_asns >= 2 AND (lastTime - firstTime) <= 3600
+/* --- E1: impossible travel via haversine --- */
+| eval dist_km = round(6371 * acos(min(1,
+      (sin(lat1*pi()/180) * sin(lat2*pi()/180)) +
+      (cos(lat1*pi()/180) * cos(lat2*pi()/180) * cos((lon2-lon1)*pi()/180)))), 1)
+| eval hours = max(0.0167, (lastTime - firstTime)/3600)
+| eval velocity_kmh = round(dist_km / hours, 0)
+| eval impossible_travel = if(velocity_kmh > 900, "yes", "no")
+/* --- E8: device changed mid-session --- */
+| eval device_changed = if(mvcount(devices) > 1, "yes", "no")
+/* --- severity matrix (spec §2.4) --- */
+| eval severity = case(
+    impossible_travel="yes",                       "critical",
+    n_countries >= 2 AND device_changed="yes",     "critical",
+    n_countries >= 2,                              "high",
+    true(),                                        "medium")
+| eval mitre="T1550.004", detection="Session token reuse across browsers"
+| convert ctime(firstTime) ctime(lastTime)
+| table severity, user, session_id, browsers, ips, countries, dist_km,
+        velocity_kmh, impossible_travel, device_changed, events, firstTime, lastTime
+| sort - severity, - velocity_kmh
+
+
+/* =============================================================================
+   VERSION 2 — OKTA  (System Log)
+   dtHash is Okta's device token. Same externalSessionId + different dtHash is
+   one of the cleanest hijack signals in any product (spec §4.2, E8).
+   ============================================================================= */
+index=okta sourcetype="OktaIM2:log" authenticationContext.externalSessionId=*
+| rename authenticationContext.externalSessionId as session_id,
+         actor.alternateId       as user,
+         client.ipAddress        as src_ip,
+         client.userAgent.browser as okta_browser,
+         client.userAgent.os      as okta_os,
+         client.userAgent.rawUserAgent as ua,
+         client.geographicalContext.country as country,
+         client.geographicalContext.geolocation.lat as lat,
+         client.geographicalContext.geolocation.lon as lon,
+         securityContext.asNumber as asn,
+         securityContext.isProxy  as is_proxy,
+         debugContext.debugData.dtHash as device_token
+| eval browser_fp = lower(okta_browser).":".lower(okta_os)
+| search NOT [ | inputlookup corporate_egress_ranges | fields src_ip ]
+| search NOT [ | inputlookup mobile_carrier_asns     | fields asn ]
+| where NOT match(lower(okta_browser),"unknown|okta|service")                    /* S5 */
+| stats min(_time) as firstTime, max(_time) as lastTime,
+        dc(browser_fp) as n_browsers, dc(asn) as n_asns, dc(country) as n_countries,
+        dc(device_token) as n_device_tokens,
+        values(browser_fp) as browsers, values(src_ip) as ips,
+        values(country) as countries, values(is_proxy) as proxy_seen,
+        values(eventType) as eventTypes,
+        earliest(lat) as lat1, earliest(lon) as lon1,
+        latest(lat) as lat2, latest(lon) as lon2, count as events
+    by session_id, user
+| where n_browsers >= 2 AND n_asns >= 2 AND (lastTime - firstTime) <= 3600
+| eval dist_km = round(6371 * acos(min(1,
+      (sin(lat1*pi()/180) * sin(lat2*pi()/180)) +
+      (cos(lat1*pi()/180) * cos(lat2*pi()/180) * cos((lon2-lon1)*pi()/180)))), 1)
+| eval velocity_kmh = round(dist_km / max(0.0167,(lastTime-firstTime)/3600), 0)
+| eval severity = case(
+    n_device_tokens >= 2 AND n_countries >= 2, "critical",     /* E8 + E2 */
+    velocity_kmh > 900,                        "critical",     /* E1 */
+    n_device_tokens >= 2,                      "high",         /* E8 */
+    mvfind(proxy_seen,"true") >= 0,            "high",         /* E5 */
+    n_countries >= 2,                          "high",
+    true(),                                    "medium")
+| eval mitre="T1550.004"
+| convert ctime(firstTime) ctime(lastTime)
+| table severity, user, session_id, browsers, ips, countries, n_device_tokens,
+        dist_km, velocity_kmh, eventTypes, events, firstTime, lastTime
+| sort - severity
+
+
+/* =============================================================================
+   VERSION 3 — LAB WEB APP + REVERSE PROXY  (Juice Shop behind nginx/Traefik)
+   The only version with JA3/JA4, so it is the one that can detect a UA-spoofing
+   attacker (E7). Cookie is HMAC-hashed at the proxy — never index raw (spec §3.2).
+   ============================================================================= */
+index=weblogs sourcetype=nginx:access session_key=*
+| `normalise_browser`
+| iplocation src_ip
+| stats min(_time) as firstTime, max(_time) as lastTime,
+        dc(browser_fp) as n_browsers, dc(ja4) as n_ja4, dc(Country) as n_countries,
+        values(browser_fp) as browsers, values(ja4) as ja4s, values(src_ip) as ips,
+        values(Country) as countries, values(uri_path) as paths,
+        earliest(lat) as lat1, earliest(lon) as lon1,
+        latest(lat) as lat2, latest(lon) as lon2, count as events
+    by session_key, user
+| eval n_ip_c = mvcount(ips)
+/* R3 satisfied by EITHER a browser-family change OR a TLS fingerprint change.
+   JA4 is authoritative — UA is client-supplied and spoofable (spec §3.3). */
+| where (n_browsers >= 2 OR n_ja4 >= 2) AND n_ip_c >= 2
+    AND (lastTime - firstTime) <= 3600
+/* E7 — UA matches but TLS stack does not: deliberate spoofing, escalate hard */
+| eval ua_spoof_suspected = if(n_browsers = 1 AND n_ja4 >= 2, "yes", "no")
+| eval dist_km = round(6371 * acos(min(1,
+      (sin(lat1*pi()/180) * sin(lat2*pi()/180)) +
+      (cos(lat1*pi()/180) * cos(lat2*pi()/180) * cos((lon2-lon1)*pi()/180)))), 1)
+| eval velocity_kmh = round(dist_km / max(0.0167,(lastTime-firstTime)/3600), 0)
+| eval severity = case(
+    ua_spoof_suspected="yes",                  "critical",
+    n_browsers >= 2 AND n_countries >= 2,      "critical",
+    n_browsers >= 2,                           "high",
+    true(),                                    "medium")
+| eval mitre="T1550.004"
+| convert ctime(firstTime) ctime(lastTime)
+| table severity, user, session_key, browsers, ja4s, ua_spoof_suspected,
+        ips, countries, dist_km, velocity_kmh, paths, events, firstTime, lastTime
+| sort - severity
+
+
+/* =============================================================================
+   VERSION 4 — GENERIC / CIM  (Authentication + Web datamodels)
+   Portable but least precise. Map src_country and session_id per source.
+   ============================================================================= */
+| tstats summariesonly=t count,
+    min(_time) as firstTime, max(_time) as lastTime,
+    values(Web.http_user_agent) as uas, values(Web.src) as ips
+  from datamodel=Web
+  where Web.session_id=* by Web.session_id, Web.user, Web.src_country
+| rename "Web.*" as *
+| mvexpand uas
+| eval ua=uas
+| `normalise_browser`
+| stats min(firstTime) as firstTime, max(lastTime) as lastTime,
+        dc(browser_fp) as n_browsers, dc(src_country) as n_countries,
+        values(browser_fp) as browsers, values(ips) as ips,
+        values(src_country) as countries, sum(count) as events
+    by session_id, user
+| eval n_ip_c = mvcount(ips)
+| where n_browsers >= 2 AND n_ip_c >= 2 AND (lastTime - firstTime) <= 3600
+| eval severity = case(n_countries >= 2, "high", true(), "medium")
+| eval mitre="T1550.004"
+| convert ctime(firstTime) ctime(lastTime)
+| table severity, user, session_id, browsers, ips, countries, events, firstTime, lastTime
+| sort - severity
+
+
+/* =============================================================================
+   savedsearches.conf
+   ============================================================================= */
+/*
+[Session Token Reuse - Multiple Browsers and Locations (T1550.004)]
+search = <paste the version matching your telemetry>
+dispatch.earliest_time = -70m@m
+dispatch.latest_time = now
+cron_schedule = */15 * * * *
+enableSched = 1
+alert.severity = 5
+alert.track = 1
+action.notable = 1
+action.notable.param.rule_title = Session Token Reuse Across Browsers (T1550.004)
+action.notable.param.security_domain = identity
+action.notable.param.drilldown_search = index=* session_id="$result.session_id$"
+description = One session token presented from two or more browser families and ASNs within 60 minutes. Indicates AiTM phishing, infostealer cookie theft or token replay. MFA does not prevent this - the token is already authenticated. RESPOND BY REVOKING THE SESSION, not by resetting the password.
+
+# Overlap the window (70m for a 60m correlation) so sessions spanning a search
+# boundary are not missed.
+*/
+
+
+/* =============================================================================
+   REQUIRED LOOKUPS (create before enabling — suppression will not work without them)
+     corporate_egress_ranges   ipAddress      S1
+     mobile_carrier_asns       asn            S2
+     icloud_private_relay      ipAddress      S3  (refresh weekly from Apple's
+                                                    published egress ranges)
+     service_user_agents       browser_family S5
+     approved_travel_users     user           S7
+
+   TUNING
+     - Run monitor-only for 2 weeks. Expect S4 (browser auto-update) and S5
+       (native app webviews) to dominate the first pass.
+     - If n_browsers >= 2 fires constantly for one app, that app is probably
+       sharing a session across an embedded webview and a browser — an app bug
+       worth reporting, not a detection failure.
+
+   RESPONSE — revoke the session first. A password reset does NOT invalidate an
+   existing session token. See spec §6.
+   ============================================================================= */

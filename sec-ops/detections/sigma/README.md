@@ -1,33 +1,93 @@
 # Sigma Detection Rules
 
 ## Overview
-This directory contains Sigma rules organized by complexity level, demonstrating progression in detection engineering skills.
+
+Sigma rules organised by complexity, demonstrating progression in detection
+engineering. Each rule maps to MITRE ATT&CK and is written against a specific,
+correct logsource.
 
 ## Structure
-- `1-beginner/` - Basic single-event detections
-- `2-intermediate/` - Multi-condition rules with filters
-- `3-advanced/` - Behavioral correlation and chains
-- `4-expert/` - Complex APT detection patterns
+
+- `1-beginner/` — basic single-event detections
+- `2-intermediate/` — multi-condition rules with filters
+- `3-advanced/` — behavioural detections
+- `4-expert/` — multi-stage correlation
+
+## Rules
+
+One rule per file. A detection made of several rules — base events plus the
+correlation rules that consume them — lives in a **folder** of single-document
+files; pySigma resolves the `rules:` references by `name` across the folder when
+you convert or `sigma check` it. Single-file entries below are standalone rules.
+
+| Path | Files | Logsource | ATT&CK |
+|---|---|---|---|
+| `1-beginner/failed_logins/` | 3 | windows / security | T1110, T1110.003 |
+| `1-beginner/powershell_download.yml` | 1 | windows / process_creation | T1059.001, T1105 |
+| `2-intermediate/lsass_access.yml` | 1 | windows / process_access | T1003.001 |
+| `2-intermediate/lsass_dump_tools.yml` | 1 | windows / process_creation | T1003.001 |
+| `2-intermediate/registry_persistence.yml` | 1 | windows / registry_set | T1547.001 |
+| `3-advanced/ransomware_behavior/` | 5 | process_creation, security, file_event | T1486, T1490 |
+| `3-advanced/session_token_reuse/` | 10 | azure/signinlogs, okta, webserver | T1550.004, T1539 |
+| `4-expert/apt_chain/` | 5 | wmi, security, process_access | T1546.003, T1053.005, T1003.001, T1021.002 |
+
+**Coverage: 13 distinct ATT&CK techniques and sub-techniques across 27 rule
+files in 8 detections.** Mostly Windows endpoint; `session_token_reuse/` is the
+first identity/SaaS coverage. Linux is not yet implemented.
+
+> The `session_token_reuse/` rules are deliberately the *lossy* version of that
+> detection — Sigma cannot express its full condition set. See the header
+> comment in `session_token_reuse/entra_signin_with_session.yml` and the
+> [spec](../specs/T1550.004_session_token_reuse.md).
 
 ## Usage
 
-### Convert to Elastic
+`sigmac` was deprecated with the retirement of the legacy `sigmatools` package.
+Current tooling is **pySigma** via **sigma-cli**.
+
 ```bash
-sigmac -t es-query powershell_download.yml -o elastic_rule.json
+pip install sigma-cli
+sigma plugin install elasticsearch
+sigma plugin install splunk
+```
+
+### Validate
+
+```bash
+sigma check .
+```
+
+### Convert to Elastic
+
+```bash
+sigma convert -t lucene -p ecs_windows 1-beginner/powershell_download.yml
 ```
 
 ### Convert to Splunk
+
 ```bash
-sigmac -t splunk lsass_access.yml -o splunk_rule.txt
+sigma convert -t splunk -p sysmon 2-intermediate/lsass_access.yml
 ```
 
+Convert a correlation detection by pointing the tool at its folder so the base
+rules resolve:
+
+```bash
+sigma convert -t splunk -p sysmon 4-expert/apt_chain/
+```
+
+> Correlation rules (e.g. `4-expert/apt_chain/`) are only supported by backends
+> that implement pySigma correlation. Splunk and ES|QL do; several others do not.
+> Check backend support before depending on it.
+
 ## Testing
-Run the validation script:
-```python
+
+```bash
 python ../tests/validate_sigma.py
 ```
 
-## Coverage
-- 15+ MITRE ATT&CK techniques
-- Windows, Linux, and cloud detections
-- Validated against real attack data
+The validator checks schema and field/logsource consistency. There is **no
+automated harness replaying real attack telemetry** against these rules yet —
+validation to date is by inspection plus manual execution of the atomics listed
+in each rule's sibling platform detection under `../crowdstrike`, `../splunk`
+and `../elastic`. Building that harness is tracked as open work.

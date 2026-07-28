@@ -1,0 +1,32 @@
+title: Ransomware Behaviour Chain
+id: e5f6a7b8-9012-34ef-5678-6789012345ef
+status: experimental
+description: |
+  Correlates shadow-copy destruction, high-volume file modification and ransom
+  note creation on one host inside 10 minutes. Each stage alone is noisy; the
+  combination is not.
+
+  The mass-file-access threshold is expressed as a separate event_count
+  correlation below, because Sigma cannot express per-selection thresholds
+  inside a single temporal correlation.
+references:
+  - https://attack.mitre.org/techniques/T1486/
+  - https://attack.mitre.org/techniques/T1490/
+author: Keith M
+date: 2026/07/24
+tags:
+  - attack.impact
+  - attack.t1486
+  - attack.t1490
+correlation:
+  type: temporal
+  rules:
+    - ransomware_shadow_delete
+    - ransomware_mass_file_access
+    - ransomware_note
+  group-by:
+    - Computer
+  timespan: 10m
+falsepositives:
+  - Purple-team ransomware simulation in this lab
+level: critical

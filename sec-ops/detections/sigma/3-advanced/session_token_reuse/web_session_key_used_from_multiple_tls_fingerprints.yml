@@ -9,9 +9,6 @@ description: |
   stack, not a client-supplied string. A competent attacker replaying a stolen
   cookie copies the victim's User-Agent verbatim, which defeats browser-based
   detection entirely but leaves the TLS fingerprint unchanged and mismatched.
-  This is not a corner case: SOC investigation practice treats the User-Agent as
-  attacker-controlled precisely because malware routinely presents a legitimate,
-  normal-looking UA to evade inspection.
 
   This rule therefore catches the case the browser rules miss, and a hit where
   the User-Agent is IDENTICAL is stronger evidence, not weaker - it implies

@@ -1,0 +1,47 @@
+# =============================================================================
+# APT-like activity chain - T1546.003 / T1053.005 / T1003.001 / T1021
+#
+# Rewritten 2026-07-24. The previous version was not valid Sigma: it declared a
+# `correlation:` block referencing names that existed only as inline selections
+# inside a single rule, and it crammed Sysmon EID 10, WMI-Activity EID 5861 and
+# Security-log EIDs under one `service: security` logsource.
+#
+# Modern Sigma correlation (pySigma / sigma-cli) requires each stage to be its
+# own rule document with its own id, name and correct logsource. The correlation
+# document then references those rules by `name`. Multi-document YAML (---) keeps
+# the chain in one file; `sigma convert` resolves the references.
+#
+# Validate:  sigma check .
+# Convert :  sigma convert -t <backend> -p <pipeline> .   (run from this folder
+#            so the base rules and correlation resolve together)
+# Note    :  correlation support varies by backend. Splunk and ES|QL handle
+#            temporal correlation; several backends do not. Check before relying
+#            on it in production.
+# =============================================================================
+
+title: WMI Event Subscription Persistence
+id: 1c4f8a30-9b62-4d15-8e77-2a6f0c3d5e91
+name: apt_chain_wmi_persistence
+status: test
+description: WMI permanent event subscription created - classic fileless persistence.
+references:
+  - https://attack.mitre.org/techniques/T1546/003/
+author: Keith M
+date: 2026/07/24
+tags:
+  - attack.persistence
+  - attack.t1546.003
+logsource:
+  product: windows
+  service: wmi
+detection:
+  selection:
+    EventID: 5861
+  keywords:
+    - 'EventConsumer'
+    - 'EventFilter'
+    - '__InstanceCreationEvent'
+  condition: selection and keywords
+falsepositives:
+  - SCCM, monitoring agents and some backup products create WMI subscriptions
+level: medium

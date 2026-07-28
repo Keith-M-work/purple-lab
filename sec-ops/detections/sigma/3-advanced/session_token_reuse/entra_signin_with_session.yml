@@ -1,0 +1,89 @@
+# =============================================================================
+# Session Token Reuse Across Browsers / Locations — T1550.004
+#
+# Spec: ../../../specs/T1550.004_session_token_reuse.md
+#
+# WHAT SIGMA CAN AND CANNOT EXPRESS HERE — read before deploying
+#
+#   Expressible:  R1 same session id, R2 same user, R3 >=2 distinct browsers,
+#                 R5 time window.  A `value_count` correlation over the session
+#                 id, counting distinct browser values, is exactly R3.
+#
+#   NOT expressible: R4 (>=2 distinct ASNs) in the SAME correlation. Sigma's
+#                 value_count takes a single `field:`, so one rule can count
+#                 distinct browsers OR distinct ASNs, not both with an AND
+#                 between them. Both variants are provided below; run them as a
+#                 pair and intersect on session id at the backend, or use the
+#                 native SPL / ES|QL / CQL implementations which express R3 AND
+#                 R4 in one pass.
+#
+#   NOT expressible: the suppression list (S1-S7) and browser-family
+#                 NORMALISATION. Normalisation matters most — without it you
+#                 alert on every Chrome auto-update (spec S4). Entra's
+#                 DeviceDetail.browser is "Chrome 126.0.0", so a raw distinct
+#                 count treats a version bump as a new browser. Apply
+#                 normalisation in the ingest pipeline before these rules run,
+#                 or accept a high false-positive rate.
+#
+#   Consequence: treat this file as the portable, lossy version. The platform
+#                implementations under ../../../{splunk,elastic,crowdstrike}/ are
+#                the ones to deploy where you have the choice.
+#
+# Validate: sigma check .
+# Convert : sigma convert -t splunk .   (run from this folder so the base rule
+#           and its correlations resolve together)
+#           (correlation support varies by backend — verify before relying on it)
+# =============================================================================
+
+title: Entra ID Interactive Sign-In With Session ID
+id: 3a7c9e21-4b58-4d06-9f13-6e2a8c4d0b75
+name: entra_signin_with_session
+status: experimental
+description: Base event - successful browser Entra ID sign-in carrying a session
+  id. Not an alert on its own; consumed by the correlations below.
+references:
+  - https://attack.mitre.org/techniques/T1550/004/
+author: Keith M
+date: 2026/07/24
+modified: 2026/07/28
+tags:
+  - attack.defense_evasion
+  - attack.t1550.004
+logsource:
+  product: azure
+  service: signinlogs
+detection:
+  selection:
+    # In the Sentinel SigninLogs table ResultType is a STRING ("0"). Change to
+    # '0' if you ingest via Log Analytics; integer 0 matches EventHub exports.
+    ResultType: 0
+  filter_no_session:
+    SessionId: null
+  # Exclude non-browser client apps. These values live in clientAppUsed, NOT in
+  # DeviceDetail.browser (which holds "Chrome 126.0.0"); filtering them on the
+  # browser field never matches and excludes nothing.
+  filter_non_browser_client:
+    clientAppUsed:
+      - 'Mobile Apps and Desktop clients'
+      - 'Exchange ActiveSync'
+      - 'IMAP4'
+      - 'POP3'
+      - 'MAPI'
+      - 'SMTP'
+      - 'Other clients'
+  # Drop sign-ins with no browser value so they cannot inflate the distinct
+  # browser count in the correlation.
+  filter_no_browser:
+    DeviceDetail.browser: null
+  condition: selection and not 1 of filter_*
+fields:
+  - UserPrincipalName
+  - SessionId
+  - IPAddress
+  - DeviceDetail.browser
+  - clientAppUsed
+  - AutonomousSystemNumber
+  - LocationDetails.countryOrRegion
+falsepositives:
+  - Base rule - not intended to alert
+level: informational

@@ -1,0 +1,55 @@
+# =============================================================================
+# Ransomware behaviour chain - T1490 / T1486
+#
+# Rewritten 2026-07-24. The previous version had the same structural faults as
+# the old apt_chain.yml:
+#   - `service: sysmon` logsource, but the selections used EID 4688 and 4663
+#     (Security log) alongside EID 11 (Sysmon FileCreate).
+#   - a `correlation:` block with a timespan but no `rules:` list.
+#   - a condition using `(selection | count() >= N) and ...`, which is not valid
+#     Sigma - piped aggregation cannot be combined with boolean logic.
+#
+# Now: three correctly-scoped base rules plus a temporal correlation.
+# =============================================================================
+
+title: Volume Shadow Copy Deletion
+id: 7a2e5c81-3f94-4b06-8d17-9e0c2a4b6d38
+name: ransomware_shadow_delete
+status: test
+description: Deletion of volume shadow copies or disabling of recovery - the
+  standard precursor to encryption, used to block rollback.
+references:
+  - https://attack.mitre.org/techniques/T1490/
+author: Keith M
+date: 2026/07/24
+tags:
+  - attack.impact
+  - attack.t1490
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_vssadmin:
+    CommandLine|contains|all:
+      - 'vssadmin'
+      - 'delete'
+      - 'shadow'
+  selection_wmic:
+    CommandLine|contains|all:
+      - 'shadowcopy'
+      - 'delete'
+  selection_bcdedit:
+    CommandLine|contains|all:
+      - 'bcdedit'
+      - 'recoveryenabled'
+      - 'no'
+  selection_wbadmin:
+    CommandLine|contains|all:
+      - 'wbadmin'
+      - 'delete'
+      - 'catalog'
+  condition: 1 of selection_*
+falsepositives:
+  - Backup software pruning old shadow copies
+  - Disk cleanup utilities
+level: high

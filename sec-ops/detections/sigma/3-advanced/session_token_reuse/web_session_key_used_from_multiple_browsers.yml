@@ -1,13 +1,11 @@
 title: Web Session Key Used From Multiple Browsers
 id: 1c5e7a09-3d36-4f84-b79b-4a0c6e2f8d53
 status: experimental
-description: |
-  One web session key presented by two or more distinct browser User-Agents
-  within an hour. REQUIRES normalisation of cs-user-agent to browser family
-  before this rule runs - a raw User-Agent string changes on every browser
-  auto-update, which is the dominant false positive without normalisation. See
-  README.md. Prefer the JA4 variant where TLS fingerprints are available: the
-  User-Agent is trivially spoofable and this rule is the weaker of the two.
+description: One web session key presented by two or more distinct browser
+  User-Agents within an hour. Normalise to browser family before this runs, or
+  browser auto-update is the dominant FP. Prefer the JA4 variant where TLS
+  fingerprints are available - the User-Agent is trivially spoofable and this is
+  the weaker of the two.
 references:
   - https://attack.mitre.org/techniques/T1550/004/
   - https://attack.mitre.org/techniques/T1539/
@@ -30,5 +28,5 @@ correlation:
     gte: 2
     field: cs-user-agent
 falsepositives:
-  - Browser auto-update - dominant FP without browser-family normalisation
+  - Browser auto-update - dominant FP without family normalisation
 level: high

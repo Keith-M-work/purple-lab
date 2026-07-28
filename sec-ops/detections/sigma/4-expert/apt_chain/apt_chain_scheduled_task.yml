@@ -1,0 +1,30 @@
+title: Scheduled Task Created With Masquerading Name
+id: 2d5a9b41-0c73-4e26-9f88-3b7a1d4e6f02
+name: apt_chain_scheduled_task
+status: test
+description: Scheduled task registered using a name that mimics common software updaters.
+references:
+  - https://attack.mitre.org/techniques/T1053/005/
+author: Keith M
+date: 2026/07/24
+tags:
+  - attack.persistence
+  - attack.t1053.005
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4698
+    TaskName|contains:
+      - 'Updater'
+      - 'OneDrive'
+      - 'GoogleUpdate'
+      - 'AdobeUpdate'
+  filter_legit_path:
+    TaskName|startswith:
+      - '\Microsoft\Windows\'
+  condition: selection and not filter_legit_path
+falsepositives:
+  - Genuine third-party updaters registering tasks outside the Microsoft namespace
+level: medium

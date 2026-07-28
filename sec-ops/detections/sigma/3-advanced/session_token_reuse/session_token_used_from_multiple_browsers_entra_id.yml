@@ -7,11 +7,6 @@ description: |
   benign path that produces this. Indicates AiTM phishing, infostealer cookie
   theft or token replay.
 
-  REQUIRES browser-family normalisation upstream (see README.md). Entra's
-  DeviceDetail.browser is "Chrome 126.0.0", so without normalising to family a
-  routine auto-update reads as a second browser and this rule fires on it. This
-  is the dominant false positive.
-
   MFA does not prevent this: the stolen token is already authenticated. Respond
   by REVOKING THE SESSION, not by resetting the password.
 references:
@@ -19,7 +14,6 @@ references:
   - https://attack.mitre.org/techniques/T1539/
 author: Keith M
 date: 2026/07/24
-modified: 2026/07/28
 tags:
   - attack.defense_evasion
   - attack.credential_access
@@ -36,7 +30,7 @@ correlation:
     gte: 2
     field: DeviceDetail.browser
 falsepositives:
-  - Browser auto-update mid-session if DeviceDetail.browser is not normalised to
-    family before this rule runs - the dominant FP, see README.md
+  - Browser auto-update mid-session, if browser values are not normalised to
+    family before this rule runs - see the header note, this is the dominant FP
   - Native application webviews sharing a token with the default browser
 level: high

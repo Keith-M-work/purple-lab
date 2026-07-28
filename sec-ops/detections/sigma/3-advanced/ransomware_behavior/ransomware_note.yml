@@ -1,0 +1,29 @@
+title: Ransom Note File Creation
+id: 9c4a7e03-5b16-4d28-af39-1a2e4c6d8f5a
+name: ransomware_note
+status: test
+description: Creation of files matching common ransom-note naming conventions.
+references:
+  - https://attack.mitre.org/techniques/T1486/
+author: Keith M
+date: 2026/07/24
+tags:
+  - attack.impact
+  - attack.t1486
+logsource:
+  product: windows
+  category: file_event
+detection:
+  selection_name:
+    TargetFilename|contains:
+      - '_readme.txt'
+      - '_RESTORE'
+      - 'HOW_TO_DECRYPT'
+      - 'HOW-TO-RECOVER'
+      - 'DECRYPT_INSTRUCTION'
+      - 'RECOVER-FILES'
+      - 'YOUR_FILES_ARE_ENCRYPTED'
+  condition: selection_name
+falsepositives:
+  - Security awareness training material and this lab's own simulation files
+level: high

@@ -6,12 +6,9 @@ description: |
   client. This is the crude end of token theft - the attacker lifted the cookie
   into a tool without bothering to impersonate a browser.
 
-  This is a single-event rule: it fires on any request that carries a session
-  key AND a tool User-Agent. It does not, and with a single event cannot, prove
-  the key previously belonged to a browser session - a benign API client that
-  reuses a browser cookie will also match (see false positives). Non-browser and
-  missing User-Agent values are a standard proxy-log investigation signal;
-  treat a hit as a lead to confirm against the session's browser history.
+  Single-event rule: it fires on any request carrying a session key AND a tool
+  User-Agent, and cannot on a single event prove the key was previously a browser
+  session - a benign API client reusing a browser cookie also matches (see FPs).
 references:
   - https://attack.mitre.org/techniques/T1550/004/
   - https://attack.mitre.org/techniques/T1539/

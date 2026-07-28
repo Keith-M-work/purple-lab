@@ -1,11 +1,10 @@
 title: Session Token Used From Multiple Browsers (Okta)
 id: 7e1a3c65-8f92-4b40-d357-0c6e2a8b4f19
 status: experimental
-description: |
-  One Okta external session id presented by two or more distinct browsers within
-  an hour. See entra_session_multi_browser for rationale. Okta reports the
-  browser at family level, so this variant is not exposed to the auto-update
-  false positive that the Entra and web variants are.
+description: One Okta external session id presented by two or more distinct
+  browsers within an hour. See the Entra equivalent for rationale. Okta reports
+  the browser at family level, so this variant is not exposed to the auto-update
+  false positive the Entra and web variants are.
 references:
   - https://attack.mitre.org/techniques/T1550/004/
   - https://attack.mitre.org/techniques/T1539/

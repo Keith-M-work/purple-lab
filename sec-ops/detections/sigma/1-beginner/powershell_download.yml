@@ -1,35 +1,69 @@
-title: PowerShell Web Download Detection
+title: PowerShell Web Download Cradle
 id: a1b2c3d4-5678-90ab-cdef-1234567890ab
-status: stable
-description: Detects PowerShell commands downloading content from the internet
+status: test
+description: |
+  Detects PowerShell download cradles, including encoded commands. Covers
+  powershell.exe, pwsh.exe (PowerShell 7) and the ISE, and matches on
+  OriginalFileName so a renamed binary still fires.
 references:
   - https://attack.mitre.org/techniques/T1059/001/
+  - https://attack.mitre.org/techniques/T1105/
 author: Keith M
 date: 2025/01/20
+modified: 2026/07/24
 tags:
   - attack.execution
   - attack.t1059.001
   - attack.command_and_control
+  - attack.t1105
 logsource:
   product: windows
   category: process_creation
 detection:
-  selection:
-    Image|endswith: '\powershell.exe'
+  selection_img:
+    - Image|endswith:
+        - '\powershell.exe'
+        - '\pwsh.exe'
+        - '\powershell_ise.exe'
+    - OriginalFileName:
+        - 'PowerShell.EXE'
+        - 'pwsh.dll'
+        - 'powershell_ise.EXE'
+  selection_download:
     CommandLine|contains:
       - 'Invoke-WebRequest'
       - 'Invoke-RestMethod'
       - 'DownloadString'
       - 'DownloadFile'
-      - 'wget'
-      - 'curl'
-  filter:
-    CommandLine|contains:
-      - 'WindowsUpdate'
-      - 'Microsoft.com'
-  condition: selection and not filter
+      - 'DownloadData'
+      - 'Net.WebClient'
+      - 'Start-BitsTransfer'
+      - 'System.Net.Http'
+      - 'WebRequest.Create'
+      - 'iwr '
+      - 'irm '
+      - 'wget '
+      - 'curl '
+  selection_encoded:
+    # Encoded commands hide the cradle from the command line entirely. Any
+    # -EncodedCommand is worth surfacing on its own; PowerShell accepts any
+    # unambiguous prefix from -e upward.
+    CommandLine|re: '(?i)\s-(e|ec|en|enc|enco|encod|encode|encoded|encodedc|encodedco|encodedcom|encodedcomm|encodedcomma|encodedcomman|encodedcommand)\s'
+  filter_deployment_agents:
+    # Tune per environment. Filter by PARENT rather than by URL string: a URL
+    # allowlist in the command line is bypassed by simply including the allowed
+    # string somewhere in the command. Add your own agents here.
+    ParentImage|endswith:
+      - '\CcmExec.exe'
+      - '\ccmsetup.exe'
+  condition: selection_img and (selection_download or selection_encoded) and not filter_deployment_agents
+fields:
+  - Image
+  - CommandLine
+  - ParentImage
+  - User
 falsepositives:
-  - Legitimate administrative scripts
-  - Software deployment tools
-  - System update scripts
+  - Legitimate administrative and software-deployment scripts
+  - Package managers (Chocolatey, winget wrappers) that fetch over HTTP
+  - CI/CD agents bootstrapping tooling
 level: medium
