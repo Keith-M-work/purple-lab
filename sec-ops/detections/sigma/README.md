@@ -15,18 +15,17 @@ correct logsource.
 
 ## Rules
 
-One rule per file. A detection made of several rules — base events plus the
-correlation rules that consume them — lives in a **folder** of single-document
-files; pySigma resolves the `rules:` references by `name` across the folder when
-you convert or `sigma check` it. Single-file entries below are standalone rules.
+One rule per file, and **every detection is its own folder** (base events plus
+any correlation rules that consume them). pySigma resolves the `rules:`
+references by `name` across a folder when you convert or `sigma check` it.
 
 | Path | Files | Logsource | ATT&CK |
 |---|---|---|---|
 | `1-beginner/failed_logins/` | 3 | windows / security | T1110, T1110.003 |
-| `1-beginner/powershell_download.yml` | 1 | windows / process_creation | T1059.001, T1105 |
-| `2-intermediate/lsass_access.yml` | 1 | windows / process_access | T1003.001 |
-| `2-intermediate/lsass_dump_tools.yml` | 1 | windows / process_creation | T1003.001 |
-| `2-intermediate/registry_persistence.yml` | 1 | windows / registry_set | T1547.001 |
+| `1-beginner/powershell_download/` | 1 | windows / process_creation | T1059.001, T1105 |
+| `2-intermediate/lsass_access/` | 1 | windows / process_access | T1003.001 |
+| `2-intermediate/lsass_dump_tools/` | 1 | windows / process_creation | T1003.001 |
+| `2-intermediate/registry_persistence/` | 1 | windows / registry_set | T1547.001 |
 | `3-advanced/ransomware_behavior/` | 5 | process_creation, security, file_event | T1486, T1490 |
 | `3-advanced/session_token_reuse/` | 10 | azure/signinlogs, okta, webserver | T1550.004, T1539 |
 | `4-expert/apt_chain/` | 5 | wmi, security, process_access | T1546.003, T1053.005, T1003.001, T1021.002 |
@@ -60,13 +59,13 @@ sigma check .
 ### Convert to Elastic
 
 ```bash
-sigma convert -t lucene -p ecs_windows 1-beginner/powershell_download.yml
+sigma convert -t lucene -p ecs_windows 1-beginner/powershell_download/
 ```
 
 ### Convert to Splunk
 
 ```bash
-sigma convert -t splunk -p sysmon 2-intermediate/lsass_access.yml
+sigma convert -t splunk -p sysmon 2-intermediate/lsass_access/
 ```
 
 Convert a correlation detection by pointing the tool at its folder so the base
