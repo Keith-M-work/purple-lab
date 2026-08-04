@@ -1,5 +1,5 @@
 # Complete Setup Script for Purple Lab Repository
-# Run this from C:\Users\kewme\purple-lab
+# Run this from the root of your purple-lab clone (e.g. ~/purple-lab)
 
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host " PURPLE LAB COMPLETE SETUP" -ForegroundColor Yellow

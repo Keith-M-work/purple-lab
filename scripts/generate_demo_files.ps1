@@ -23,7 +23,7 @@ function Write-File([string]$Path, [string]$Content) {
 # Safety check: run from repo root?
 $pwdPath = (Get-Location).Path
 if (-not (Test-Path (Join-Path $pwdPath ".git"))) {
-    Write-Warning "Warning: this directory does not appear to be a git repo root. Make sure you're in the purple-lab clone (e.g. C:\Users\kewme\purple-lab)."
+    Write-Warning "Warning: this directory does not appear to be a git repo root. Make sure you're in the purple-lab clone (e.g. ~/purple-lab)."
 }
 
 # 1) demo-playbook.md

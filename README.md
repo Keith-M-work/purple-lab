@@ -321,7 +321,7 @@ Contributions welcome! Please see [CONTRIBUTING.md](./project-docs/CONTRIBUTING.
 
 ## ⚖️ License
 
-MIT License - See [LICENSE](./project-docs/LICENSE) for details.
+MIT License - See [LICENSE](./LICENSE) for details.
 
 ---
 

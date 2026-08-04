@@ -35,7 +35,7 @@ A self-contained purple team environment for practicing adversary emulation, det
 | **purple-team-lab-guide.md** | 5-phase attack chain walkthrough: initial access through C2, mapped to MITRE ATT&CK |
 | **bloodhound-setup.md** | BloodHound CE deployment, SharpHound collection, MCP integration with Claude AI |
 | **network-diagram.md** | Full lab topology with IP assignments and VM specs |
-| **wazuh-rules/** | Custom Wazuh detection rules for LSASS access, process injection, persistence, and C2 beaconing |
+| **wazuh-rules.xml** | Custom Wazuh detection rules for LSASS access, process injection, persistence, and C2 beaconing |
 
 ## Quick Start
 
@@ -115,7 +115,7 @@ Total: 85 users | 64 groups | 12 Kerberoastable accounts
 
 ## Detection Coverage
 
-Custom Wazuh rules in `wazuh-rules/` detect:
+Custom Wazuh rules in `wazuh-rules.xml` detect:
 
 | Rule ID | Detection | ATT&CK | Sysmon Event |
 |---------|-----------|--------|--------------|
