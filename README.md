@@ -220,6 +220,7 @@ purple-lab/
 │   └── part2-wazuh-vlans/              # SIEM deployment guide
 ├── training-exercises/
 │   └── exercises/                      # Purple team scenarios
+├── scripts/                           # Repo setup & demo-file helpers
 └── project-docs/
     ├── CONTRIBUTING.md
     ├── SECURITY.md
