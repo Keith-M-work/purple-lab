@@ -1,8 +1,38 @@
 ﻿# 🛡️ Purple Lab - Enterprise SOC Infrastructure
 
+[![Security CI](https://github.com/Keith-M-work/purple-lab/actions/workflows/security-ci.yml/badge.svg)](https://github.com/Keith-M-work/purple-lab/actions/workflows/security-ci.yml)
+[![Security Scan](https://github.com/Keith-M-work/purple-lab/actions/workflows/security-scan.yml/badge.svg)](https://github.com/Keith-M-work/purple-lab/actions/workflows/security-scan.yml)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue)
+
 > Production-style purple team lab with segmented VLANs, Wazuh SIEM, real attacks, and real detections.
 
-**📖 New to this?** Read the [simplified concept overview on Medium](#) first, then dive into the full implementation here.
+Built and run end to end: the network segmentation, the SIEM, the attack tooling, and the detections that catch it. Detections are mapped to MITRE ATT&CK and validated in CI.
+
+---
+
+## ⚡ At a Glance
+
+| Area | What's here |
+|---|---|
+| **Detection engineering** | **27 Sigma rules** in four difficulty tiers, plus native **Splunk, Elastic, CrowdStrike, YARA and Wazuh** versions of key techniques → [Detection Catalog](./sec-ops/detections/README.md) |
+| **Detection-as-code** | Sigma and YARA validated in **GitHub Actions** on every push and PR to `main` ([workflows](./.github/workflows/)) |
+| **Network security** | 7 VLANs behind an enterprise firewall, default-deny inter-VLAN rules, egress control per zone |
+| **SIEM** | Wazuh single-node stack with agents across VLANs, custom rules and C2 patterns |
+| **Adversary emulation** | Havoc and Sliver C2 configs, beacon simulation, attack playbooks |
+| **Active Directory** | Scripted AD lab build, BloodHound setup, AD-focused detections |
+| **Automation** | PowerShell lab management (Pi fleet, Wazuh deployment) and Pi bootstrap scripts |
+
+## 🌟 Highlights
+
+| Project | Why it's interesting |
+|---|---|
+| [**Session token reuse (T1550.004)**](./sec-ops/detections/specs/T1550.004_session_token_reuse.md) | Detection spec, then implementations for **Okta, Entra ID and web apps** in Sigma, Splunk, Elastic and CrowdStrike. Catches stolen-session replay that MFA doesn't stop. |
+| [**Ransomware behaviour chain**](./sec-ops/detections/sigma/3-advanced/ransomware_behavior/) | Shadow-copy deletion, ransom notes, mass file changes, correlated into one chain |
+| [**APT activity chain**](./sec-ops/detections/sigma/4-expert/apt_chain/) | Persistence → credential theft → lateral movement, linked across events |
+| [**LSASS credential dumping (T1003.001)**](./sec-ops/detections/README.md#same-techniques-native-platforms) | Same technique implemented for four platforms |
+| [**C2 frameworks**](./sec-ops/offensive/c2/) | Havoc and Sliver setups plus a [beacon simulator](./sec-ops/offensive/c2/simulations/scripts/) used to generate detection data |
+| [**Wazuh across VLANs**](./medium-series/part2-wazuh-vlans/) | SIEM deployment guide with the firewall rules segmentation actually needs |
+| [**IR runbook**](./sec-ops/blue-team/incident-response/runbook.md) | Incident response runbook and [template](./sec-ops/blue-team/incident-response/templates/incident-template.md) |
 
 ---
 
@@ -18,16 +48,13 @@ A battle-tested SOC lab featuring:
 
 ---
 
-## 🚀 Quick Start
+## 📊 Network Architecture Diagram
 
-```powershell
-git clone https://github.com/Keith-M-work/purple-lab.git
-cd purple-lab
+![Purple Lab Network Architecture](./assets/network-diagram-detailed.png)
 
-# Test connectivity to Wazuh
-Test-NetConnection 10.10.10.50 -Port 443    # Wazuh dashboard
-Test-NetConnection 10.10.10.50 -Port 1515   # Agent enrollment
-```
+*Detailed technical diagram showing all 7 VLANs, firewall rules, and traffic flows. This represents the full production implementation with 5 Raspberry Pis (Fellowship members), hypervisor VMs, and enterprise-grade segmentation.*
+
+Active Directory lab topology: [ad-lab-topology.png](./ad-lab/assets/ad-lab-topology.png) · [AD network diagram notes](./ad-lab/network-diagram.md)
 
 ---
 
@@ -170,101 +197,31 @@ Test-NetConnection 10.10.10.50 -Port 1515   # Agent enrollment
 
 ---
 
-## 🛠️ Critical Issues We Fixed
-
-### 1. Port 9220 vs 9200
-Docker uses port **9200**, not 9220:
-```powershell
-$Global:WazuhConfig = @{ IndexerPort = 9200 }
-```
-
-### 2. Groups in Agent Config
-Groups belong server-side only - remove from agent:
-```bash
-sudo sed -i '/<groups>/d' /var/ossec/etc/ossec.conf
-sudo systemctl restart wazuh-agent
-```
-
-### 3. Inter-VLAN Firewall Rules
-Each VLAN needs explicit firewall rules to Wazuh:
-- **TCP 1515** (agent enrollment)
-- **UDP 1514** (event logging)
-- **TCP 443** (dashboard access)
-
-### 4. VLAN-Aware Bridge
-Hypervisor needs VLAN filtering enabled on trunk interface:
-```bash
-# Enable VLAN filtering on bridge interface
-ip link set <bridge_interface> type bridge vlan_filtering 1
-```
-
----
-
 ## 📁 Repository Structure
 
 ```
 purple-lab/
-├── assets/
-│   └── network-diagram-detailed.png    # Full topology diagram
-├── core-infra/
-│   ├── config/                         # Lab configuration files
-│   └── scripts/                        # Pi bootstrap, automation
-├── lab-apps/
-│   └── vuln-apps/                      # DVWA, Juice Shop, etc.
 ├── sec-ops/
-│   ├── blue-team/                      # Incident response playbooks
-│   ├── detections/                     # Sigma, YARA, Wazuh rules
-│   └── offensive/                      # C2 configs, attack playbooks
-├── medium-series/
-│   ├── part1-foundation/               # Network architecture articles
-│   └── part2-wazuh-vlans/              # SIEM deployment guide
-├── training-exercises/
-│   └── exercises/                      # Purple team scenarios
-├── scripts/                           # Repo setup & demo-file helpers
-└── project-docs/
-    ├── CONTRIBUTING.md
-    ├── SECURITY.md
-    └── docs/                           # Troubleshooting, PoCs
+│   ├── detections/        # ⭐ Sigma (by tier), Splunk, Elastic, CrowdStrike, YARA, Wazuh + CI tests
+│   ├── offensive/         # C2 (Havoc, Sliver), beacon simulator, attack playbooks
+│   └── blue-team/         # Incident response runbook + template
+├── ad-lab/                # Active Directory lab build, BloodHound, AD topology
+├── lab-apps/vuln-apps/    # Juice Shop, Flask SQLi (localhost-only, see SECURITY.md)
+├── core-infra/            # Pi bootstrap, Wazuh deployment automation, sample config
+├── medium-series/         # Part 1: foundation · Part 2: Wazuh across VLANs
+├── training-exercises/    # Purple team exercise template
+├── scripts/               # Repo setup and demo-file helpers
+├── docs/                  # Troubleshooting, validation, demo playbook
+├── assets/                # Network architecture diagram
+└── .github/               # CI workflows, CONTRIBUTING, SECURITY policy, CODEOWNERS
 ```
 
----
+## 📚 Documentation
 
-## 🚦 Quick Validation
-
-### Check Firewall VLANs
-```bash
-# SSH to firewall appliance
-tcpdump -i <trunk_interface> vlan 31    # Verify tagged frames on trunk
-```
-
-### Verify Agent Connectivity
-```powershell
-# From any Pi or VM
-sudo /var/ossec/bin/agent_control -l    # List connected agents
-curl -k https://10.10.10.50:443         # Test dashboard access
-```
-
-### Test Inter-VLAN Blocking
-```bash
-# From Attack VLAN (should fail)
-ping 10.31.31.10    # Should timeout (malware lab isolated)
-
-# From Management VLAN (should succeed)
-ping 10.31.31.10    # Should work (admin access)
-```
-
----
-
-## ⚡ PowerShell Lab Functions
-
-Pre-loaded management functions (from profile):
-```powershell
-pi-help          # List all Pi management commands
-wazuh-help       # Wazuh deployment commands
-shutdown-pis     # Gracefully shutdown all Pis
-pi-temp-all      # Check temperatures across the cluster
-pi-disk-all      # Check disk usage on all Pis
-```
+- [🛠️ Critical issues we fixed](./docs/troubleshooting.md): real problems from the build and their fixes
+- [🚦 Quick validation](./docs/validation.md): verify segmentation, agents and firewall rules
+- [🎬 Demo playbook](./docs/demo-playbook.md)
+- [Wazuh documentation](https://documentation.wazuh.com/)
 
 ---
 
@@ -273,7 +230,7 @@ pi-disk-all      # Check disk usage on all Pis
 - [ ] **Full packet capture solution** for network forensics
 - [ ] **Geo-blocking and threat intelligence feeds** on firewall
 - [ ] **Hypervisor backup system** for VM snapshots
-- [ ] **Detect-as-code** CI pipeline (lint Sigma/YARA rules)
+- [x] **Detect-as-code** CI pipeline (Sigma and YARA validation in GitHub Actions)
 - [ ] **WiFi penetration testing device** integration
 - [ ] **SPAN port** dedicated to packet capture
 - [ ] **Agent health SLOs** (95%+ check-in rate alerts)
@@ -283,34 +240,16 @@ pi-disk-all      # Check disk usage on all Pis
 ## ⚠️ Safety & Compliance
 
 - **Never expose to public internet** (except honeypot VLAN 34)
-- **RFC 5737** test IPs used in all documentation
-- **Vulnerable apps** strictly isolated in designated VLANs
+- **Placeholder addressing:** all IPs in this repo are illustrative (RFC 1918 ranges), not the real lab's
+- **Vulnerable apps** strictly isolated in designated VLANs and bound to localhost ([security policy](./.github/SECURITY.md))
 - **C2 frameworks** disabled by default, activated per-exercise
 - **Malware samples** encrypted at rest, air-gapped analysis
 
 ---
 
-## 📊 Network Architecture Diagram
-
-![Purple Lab Network Architecture](./assets/network-diagram-detailed.png)
-
-*Detailed technical diagram showing all 7 VLANs, firewall rules, and traffic flows. This represents the full production implementation with 5 Raspberry Pis (Fellowship members), hypervisor VMs, and enterprise-grade segmentation.*
-
----
-
-## 📚 Additional Resources
-
-- **[Simplified Concept Article on Medium](#)** - Educational overview with 3-VLAN example
-- **Firewall Documentation** - Check your vendor's official docs
-- [Wazuh Documentation](https://documentation.wazuh.com/)
-- **Hypervisor Admin Guide** - Refer to your platform's documentation
-- **Managed Switch Documentation** - Consult your vendor's resources
-
----
-
 ## 🤝 Contributing
 
-Contributions welcome! Please see [CONTRIBUTING.md](./project-docs/CONTRIBUTING.md) for:
+Contributions welcome! Please see [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for:
 - 🐛 Bug reports
 - 💡 Feature suggestions
 - 📝 Documentation improvements
@@ -329,12 +268,10 @@ MIT License - See [LICENSE](./LICENSE) for details.
 
 Built by **Keith** | Purple Team Practitioner
 
-- 📝 [Medium](#) - Articles on SOC automation & detection engineering
-- 💼 [LinkedIn](#) - Connect for cybersecurity discussions
 - 🐙 [GitHub](https://github.com/Keith-M-work) - More security projects
 
 **If this lab helped you, please ⭐ star the repo!**
 
 ---
 
-*Built with ❤️ for the cybersecurity community | Last updated: October 2025*
+*Built with ❤️ for the cybersecurity community | Last updated: November 2026*

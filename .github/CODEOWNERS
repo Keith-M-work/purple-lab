@@ -1,0 +1,13 @@
+# CODEOWNERS: require owner review for critical paths (GitHub reads this from .github/)
+
+# Detection rules and their tests
+/sec-ops/detections/ @Keith-M-work
+
+# Intentionally vulnerable apps: changes need careful review
+/lab-apps/vuln-apps/ @Keith-M-work
+
+# Offensive tooling (C2 configs, simulations)
+/sec-ops/offensive/ @Keith-M-work
+
+# CI/CD
+/.github/ @Keith-M-work
