@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '0 6 * * 1'  # Weekly on Monday
 
+# Least privilege for GITHUB_TOKEN: these jobs only read the repo (CodeQL actions/missing-workflow-permissions)
+permissions:
+  contents: read
+
 jobs:
   validate-sigma:
     runs-on: ubuntu-latest

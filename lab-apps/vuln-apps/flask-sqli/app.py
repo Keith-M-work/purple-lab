@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, render_template_string
 import sqlite3
 
@@ -31,4 +32,8 @@ def search():
         return f"<h2>Error:</h2><pre>{e}</pre>"
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Safe defaults: localhost only, debugger off. The SQLi/XSS above are the intentional lesson;
+    # an exposed Werkzeug debugger is not (it is an interactive Python console = RCE).
+    # Docker sets HOST=0.0.0.0 inside the container; publish it with -p 127.0.0.1:5000:5000.
+    app.run(host=os.environ.get('HOST', '127.0.0.1'), port=5000,
+            debug=os.environ.get('FLASK_DEBUG') == '1')
