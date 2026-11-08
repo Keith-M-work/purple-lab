@@ -22,7 +22,7 @@
 # Configuration (edit)
 # ======================
 $Global:WazuhConfig = @{
-  ManagerLANIP     = "WAZUH_MGR_IP"  # e.g., 192.168.10.50
+  ManagerLANIP     = "WAZUH_MGR_IP"  # e.g., 10.10.10.50 (placeholder; see README addressing)
   DashboardPort    = 443             # host -> dashboard (container 5601)
   IndexerHostPort  = 9220            # host -> indexer (container 9200)
   AgentEnrollPort  = 1515            # TCP enrollment (agent-auth)
